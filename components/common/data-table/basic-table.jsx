@@ -1,0 +1,243 @@
+"use client";
+import * as React from "react";
+
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { X } from "lucide-react";
+import { DataTableToolbar } from "./data-table-toolbar";
+import DatePickerWithRange from "@/components/date-picker-with-range";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import Select from "react-select";
+import { DataTablePagination } from "./data-table-pagination";
+import TableSkeleton from './TableSkeleton'
+
+export function BasicDataTable({
+  data,
+  columns,
+  filterPlaceHolder,
+  pagination,
+  pageIndex,
+  pageSize,
+  setPageIndex,
+  setPageSize,
+  pageCount,
+  setSearchString,
+  searchString,
+  hiddenOnly = false,
+  tableLoading,
+  status,
+  startDate,
+  endDate,
+  handleStatusChange,
+  handleStartDateChange,
+  handleEndDateChange,
+  handleReset,
+  refetch,
+  hiddenFilter = false,
+  handleViewClick,
+  rowClickable = false,
+}) {
+  const [sorting, setSorting] = React.useState([]);
+  const [columnFilters, setColumnFilters] = React.useState([]);
+  const [columnVisibility, setColumnVisibility] = React.useState({});
+  const [rowSelection, setRowSelection] = React.useState({});
+  const [dateRange, setDateRange] = React.useState({ from: "", to: "" });
+  const [selectedRowId, setSelectedRowId] = React.useState(null);
+
+  const handleDateRangeChange = ({ from = null, to = null } = {}) => {
+    if (from === null && to === null) {
+      // Fetch all data
+      setDateRange({ from, to });
+      handleStartDateChange(null);
+      handleEndDateChange(null);
+      requestAnimationFrame(() => {
+        refetch();
+      });
+    } else {
+      // Fetch data within the selected date range
+      setDateRange({ from, to });
+      handleStartDateChange(from);
+      handleEndDateChange(to);
+      requestAnimationFrame(() => {
+        refetch();
+      });
+    }
+  };
+
+  const table = useReactTable({
+    data: data || [],
+    columns: columns || [],
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    pageCount,
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
+    },
+    manualPagination: true,
+    pagination: {
+      pageIndex,
+      pageSize,
+      pageCount,
+      setPageIndex,
+      setPageSize,
+    },
+  });
+
+  const isFiltered = table.getState().columnFilters.length > 0;
+
+  const resetFilters = () => {
+    handleDateRangeChange({ from: null, to: null });
+    table.resetColumnFilters();
+  };
+
+  const handleRowClick = (row) => {
+    setSelectedRowId(row.id);
+    if (rowClickable) {
+      handleViewClick(row.original._id);
+    }
+  };
+  return (
+    <>
+      <div className="space-y-4">
+        <div className="flex items-center flex-wrap gap-2  px-4">
+          {!hiddenOnly && (
+            <Input
+              placeholder={`Filter ${filterPlaceHolder}...`}
+              value={searchString || ""}
+              onChange={(event) => setSearchString(event.target.value)}
+              className="max-w-sm min-w-[200px] h-10"
+            />
+          )}
+          {hiddenFilter && (
+            <>
+              <DataTableToolbar table={table} />
+              <DatePickerWithRange
+                // className="mb-4"
+                onSelectDateRange={handleDateRangeChange}
+                selectedDateRange={dateRange}
+              />
+            </>
+          )}
+          {(isFiltered || dateRange?.from || dateRange?.to) && (
+            <Button
+              variant="outline"
+              // onClick={handleReset}
+              onClick={resetFilters}
+              // className="h-8 px-2 lg:px-3"
+              className="bg-red-500 hover:bg-red-700 text-white h-8 px-4 lg:px-3 font-bold border-none py-2 rounded"
+            >
+              Reset
+              <X className="ltr:ml-2 rtl:mr-2 h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        <div>
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup?.headers?.map((header) => {
+                    return (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {tableLoading ? ( // Display loading indicator when isLoading is true
+                // <TableRow>
+                //   <TableCell
+                //     colSpan={columns.length}
+                //     className="h-24 text-center"
+                //   >
+                //     Loading...
+                //   </TableCell>
+                // </TableRow>
+                <TableSkeleton columns={columns} />
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    onClick={() => handleRowClick(row)} // Handle row click
+                    className={`${
+                      rowClickable ? "cursor-pointer" : ""
+                    } hover:bg-blue-100`} // Apply hover background color
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns?.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {!hiddenOnly && (
+          <DataTablePagination
+            table={table}
+            pageIndex={pageIndex}
+            pageSize={pageSize}
+            setPageIndex={setPageIndex}
+            setPageSize={setPageSize}
+            pageCount={pageCount}
+          />
+        )}
+      </div>
+    </>
+  );
+}
+
+export default BasicDataTable;
