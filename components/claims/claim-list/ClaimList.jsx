@@ -20,6 +20,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -104,7 +105,7 @@ const ClaimList = () => {
       toast.success("Claim status updated successfully");
       const status = response?.data?.status;
       const jobCardId = response?.data?.jobCardId;
-      if (status === "Approved"  && USER_ROLE === "company") {
+      if (status === "Approved" && USER_ROLE === "company") {
         handleAddQuotation(jobCardId);
       }
       refetch();
@@ -218,7 +219,11 @@ const ClaimList = () => {
               onValueChange={(value) =>
                 handleStatusUpdate(row?.original?._id, value)
               }
-              disabled={row?.original?.status === "Approved" || USER_ROLE === "Technician" ||  USER_ROLE === "InspectionStaff"}
+              disabled={
+                row?.original?.status === "Approved" ||
+                USER_ROLE === "Technician" ||
+                USER_ROLE === "InspectionStaff"
+              }
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select a status" />
