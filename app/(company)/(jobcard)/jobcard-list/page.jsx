@@ -35,13 +35,13 @@ import { useEffect } from "react";
 
 const statusOptions = [
   "Pending",
-  "InProgress",
+  "In-Progress",
   "Approved",
   "Unpaid",
   "Paid",
   "Draft",
 ];
-const statusOptions2 = ["Pending", "InProgress", "Approved", "Unpaid", "Paid"];
+const statusOptions2 = ["Pending", "In-Progress", "Approved", "Unpaid", "Paid"];
 const JobCardListPage = () => {
   const { data: session } = useSession();
   const [modalOpen, setModalOpen] = useState(false);
@@ -62,6 +62,17 @@ const JobCardListPage = () => {
   const isEmployee = role === "employee";
   const isCompany = role === "company";
 
+
+  // useEffect(() => {
+  //   if (router.isReady) {
+  //     const { statusOpen } = router.query;
+  //     console.log(statusOpen, "statusOpen");
+  //     if (statusOpen) {
+  //       console.log(statusOpen,"statusOpen");
+  //       setStatus(statusOpen);
+  //     }
+  //   }
+  // }, [router.isReady, router.query]);
   const {
     data: userData,
     error: userError,

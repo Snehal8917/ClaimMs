@@ -117,7 +117,7 @@ const EmployeePage = () => {
   const DesignationList = [
     { value: "CSR", label: "CSR" },
     { value: "Technician", label: "Technician" },
-    { value: "InspectionStaff", label: "InspectionStaff" },
+    { value: "Surveyor", label: "Surveyor" },
   ];
 
   useEffect(() => {

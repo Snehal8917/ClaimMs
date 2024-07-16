@@ -23,6 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { FaNotesMedical } from "react-icons/fa";
 
 const QuotationsList = () => {
   const statusOptions = ["Approved", "Pending", "Declined", "Draft"];
@@ -256,8 +257,9 @@ const QuotationsList = () => {
         const statusBtn = row?.original?.status;
         const isLatestQuotation = row?.original?.isLatestQuotation;
         const designation = userData?.data?.userId?.designation;
+        const isEditable = userData.data.userId.designation == "Surveyor" || userData.data.userId.role == "company"
         return (
-          <div className="flex gap-3 items-center justify-end">
+          <div className="flex gap-3 items-center justify-center">
             {designation === "CSR" ? (
               <></>
             ) : (
@@ -279,6 +281,28 @@ const QuotationsList = () => {
                 )}
               </>
             )}
+            {statusBtn === "Approved" && isEditable && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      className="h-9 w-9 rounded bg-default-100 dark:bg-default-200 text-default-500 hover:text-primary-foreground"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleResupplement(jobCardId);
+                      }}
+                    >
+                      <FaNotesMedical />
+
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Supplementary Quotation</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
         );
       },
@@ -291,6 +315,7 @@ const QuotationsList = () => {
       cell: ({ row }) => {
         const jobCardId = row?.original?._id;
         const statusBtn = row?.original?.status;
+        const isEditable = userData.data.userId.designation == "Surveyor" || userData.data.userId.role == "company"
         return (
           <div className="flex gap-3 items-center justify-end">
             <TooltipProvider>
@@ -310,31 +335,11 @@ const QuotationsList = () => {
               </Tooltip>
             </TooltipProvider>
 
-            {statusBtn === "Approved" && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      className="h-9 w-9 rounded bg-default-100 dark:bg-default-200 text-default-500 hover:text-primary-foreground"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleResupplement(jobCardId);
-                      }}
-                    >
-                      <Icon icon="heroicons:pencil" className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Supplementary Quotation</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
+
 
             {statusBtn !== "Approved" && (
               <>
-                {statusBtn !== "Declined" && statusBtn !== "Pending" && (
+                {statusBtn !== "Declined" && statusBtn !== "Submitted" && isEditable && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>

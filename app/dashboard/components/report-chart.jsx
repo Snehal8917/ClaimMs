@@ -18,7 +18,7 @@ const ReportChart = ({ height = 360 }) => {
       data: [45, 52, 38, 24, 33, 40],
     },
     {
-      name: "Inprogress",
+      name: "In-Progress",
       data: [35, 41, 62, 42, 13, 35],
     },
     {

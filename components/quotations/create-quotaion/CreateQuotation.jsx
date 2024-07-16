@@ -128,6 +128,8 @@ const CreateQuotation = () => {
   });
   const quStatus = watch("quStatus");
 
+  console.log("all filres :-", watch());
+
   useEffect(() => {
     reset(initialValues);
     if (!hasAppended.current && fields.length === 0) {
@@ -153,7 +155,7 @@ const CreateQuotation = () => {
       append({ itemName: "", itemPrice: "" });
       hasAppended.current = true;
     }
-  }, [fields, append]);
+  }, [fields, append,]);
 
   const { data: InsuranceCompaniesData } = useQuery({
     queryKey: ["getInsuranceCompanies"],
@@ -274,7 +276,7 @@ const CreateQuotation = () => {
     queryKey: ["GetJobCardsList"],
     queryFn: async () => {
       return getJobCardListAction({
-        all: true,
+        all: "true",
       });
     },
   });
@@ -282,6 +284,9 @@ const CreateQuotation = () => {
     value: job._id,
     label: job.jobCardNumber,
   }));
+
+
+  console.log("JobList :---", JobData?.data);
 
   const jobCardId = params?.jobcardId;
   ///
@@ -404,31 +409,31 @@ const CreateQuotation = () => {
   const statusOptions = initialStatusOptions;
   const AllOptions = [
     { label: "Approved", value: "Approved" },
-    { label: "Pending", value: "Pending" },
+    // { label: "Pending", value: "Pending" },
     { label: "Declined", value: "Declined" },
     { label: "Draft", value: "Draft" },
     { label: "Submitted", value: "Submitted" },
   ];
   const CompanyStatusList = [
     { label: "Approved", value: "Approved" },
-    { label: "Pending", value: "Pending" },
+    // { label: "Pending", value: "Pending" },
     { label: "Declined", value: "Declined" },
     { label: "Submitted", value: "Submitted" },
   ];
   const CsrStatusList = [
     { label: "Approved", value: "Approved" },
     { label: "Declined", value: "Declined" },
-    { label: "Submitted", value: "Submitted" },
+    // { label: "Submitted", value: "Submitted" },
   ];
-  const TechnicianStatusList = [
-    { label: "Pending", value: "Pending" },
+  const SurveyorStatusList = [
     { label: "Draft", value: "Draft" },
+    { label: "Submitted", value: "Submitted" },
   ];
   const getStatusList = () => {
     if (role === "company") {
       return CompanyStatusList;
-    } else if (role === "employee" && designation === "Technician") {
-      return TechnicianStatusList;
+    } else if (role === "employee" && designation === "Surveyor") {
+      return SurveyorStatusList;
     } else if (role === "employee" && designation === "CSR") {
       return CsrStatusList;
     } else {
@@ -439,11 +444,10 @@ const CreateQuotation = () => {
   const isSelectEnabled =
     role === "company" ||
     (role === "employee" &&
-      ((designation === "Technician" && initialStatus === "Draft") ||
-        (designation === "CSR" && initialStatus === "Pending")));
+      ((designation === "Surveyor" && initialStatus === "Draft") ||
+        (designation === "CSR" && initialStatus === "Submitted")));
   const isStatusEditable = [
     "Draft",
-    "Pending",
     "Submitted",
     "Declined",
   ].includes(initialStatus);
@@ -517,12 +521,12 @@ const CreateQuotation = () => {
               {supplementId
                 ? "Supplementary Quotation"
                 : quotaionsId
-                ? "Update Quotation"
-                : viewQuotationId
-                ? "View Quotation"
-                : reCreateID
-                ? "Re-create"
-                : "Create"}
+                  ? "Update Quotation"
+                  : viewQuotationId
+                    ? "View Quotation"
+                    : reCreateID
+                      ? "Re-create"
+                      : "Create"}
             </BreadcrumbItem>
           </Breadcrumbs>
           <div className="invoice-wrapper mt-6">
@@ -533,12 +537,12 @@ const CreateQuotation = () => {
                     {supplementId
                       ? "Supplementary Quotation"
                       : quotaionsId
-                      ? "Update Quotation"
-                      : viewQuotationId
-                      ? "View Quotation"
-                      : reCreateID
-                      ? "Re-create Quotation"
-                      : "Create Quotation"}
+                        ? "Update Quotation"
+                        : viewQuotationId
+                          ? "View Quotation"
+                          : reCreateID
+                            ? "Re-create Quotation"
+                            : "Create Quotation"}
                   </div>
                   {viewQuotationId ? (
                     <>
@@ -547,11 +551,11 @@ const CreateQuotation = () => {
                         variant=""
                         className="text-xs font-semibold text-primary-500"
                         onClick={handleDownloadClick}
-                        disabled={isLoadingPDFQuotation} // Disable button when loading
+                        disabled={isLoadingPDFQuotation}
                       >
                         <Link href="#">
                           {isLoadingPDFQuotation ? (
-                            <span className="text-white">Loading...</span> // Show loading indicator
+                            <span className="text-white">Loading...</span>
                           ) : (
                             <>
                               <Download className="w-3.5 h-3.5 ltr:mr-1.5 rtl:ml-1.5 text-white" />
@@ -599,7 +603,12 @@ const CreateQuotation = () => {
                                 size="lg"
                                 id="quDateAndTime"
                                 {...field}
-                                readOnly={viewQuotationId || quotaionsId}
+                                readOnly={
+                                  (quotaionsId && quotationData?.status === 'Draft') ? false :
+                                    (quotaionsId && quotationData?.status !== 'Draft') ? true :
+                                      (viewQuotationId) ? true :
+                                        false
+                                }
                               />
                             )}
                           />
@@ -727,7 +736,14 @@ const CreateQuotation = () => {
                                 value={CsrList?.find(
                                   (option) => option.value === value
                                 )}
-                                isDisabled={viewQuotationId || quotaionsId}
+
+                                isDisabled={
+                                  (quotaionsId && quotationData?.status === 'Draft') ? false :
+                                    (quotaionsId && quotationData?.status !== 'Draft') ? true :
+                                      (viewQuotationId) ? true :
+                                        false
+                                }
+                              // isDisabled={viewQuotationId || quotaionsId}
                               />
                             )}
                           />
@@ -754,7 +770,12 @@ const CreateQuotation = () => {
                                 size="lg"
                                 id="qudaystocomplete"
                                 {...field}
-                                readOnly={viewQuotationId || quotaionsId}
+                                readOnly={
+                                  (quotaionsId && quotationData?.status === 'Draft') ? false :
+                                    (quotaionsId && quotationData?.status !== 'Draft') ? true :
+                                      (viewQuotationId) ? true :
+                                        false
+                                }
                               />
                             )}
                           />
@@ -770,6 +791,21 @@ const CreateQuotation = () => {
                       <div className="w-1/2">
                         <Label htmlFor="quJobCard">Job Card</Label>
                         <div className="flex gap-2 w-full">
+                          {/* <Controller
+                            control={control}
+                            name="quJobCard"
+                            defaultValue=""
+                            render={({ field }) => (
+                              <Input
+                                type="text"
+                                placeholder="Job Card Number"
+                                size="lg"
+                                id="quJobCard"
+                                {...field}
+                                readOnly
+                              />
+                            )}
+                          /> */}
                           <Controller
                             name="quJobCard"
                             control={control}
@@ -830,11 +866,19 @@ const CreateQuotation = () => {
                             className="sr-only peer"
                             checked={isSectionView}
                             onClick={() => {
-                              if (!viewQuotationId && !quotaionsId) {
-                                toggleView();
+                              if (!viewQuotationId) {
+                                if ((quotaionsId && quotationData?.status === 'Draft') || supplementId || jobCardI1d || reCreateID) {
+                                  toggleView();
+                                }
+
                               }
                             }}
-                            readOnly={viewQuotationId || quotaionsId}
+                            readOnly={
+                              (quotaionsId && quotationData?.status === 'Draft') ? false :
+                                (quotaionsId && quotationData?.status !== 'Draft') ? true :
+                                  (viewQuotationId) ? true :
+                                    false
+                            }
                           />
                           <div className="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary/80"></div>
                         </label>
@@ -859,6 +903,7 @@ const CreateQuotation = () => {
                                   handleAddSection={handleAddSection}
                                   handleRemoveSection={handleRemoveSection}
                                   sectionlitsFields={sectionlitsFields}
+                                  quotationData={quotationData}
                                 />
                               </div>
                             ))}
@@ -902,7 +947,10 @@ const CreateQuotation = () => {
                                             size="lg"
                                             {...field}
                                             readOnly={
-                                              viewQuotationId || quotaionsId
+                                              (quotaionsId && quotationData?.status === 'Draft') ? false :
+                                                (quotaionsId && quotationData?.status !== 'Draft') ? true :
+                                                  (viewQuotationId) ? true :
+                                                    false
                                             }
                                           />
                                         )}
@@ -934,7 +982,10 @@ const CreateQuotation = () => {
                                             size="lg"
                                             {...field}
                                             readOnly={
-                                              viewQuotationId || quotaionsId
+                                              (quotaionsId && quotationData?.status === 'Draft') ? false :
+                                                (quotaionsId && quotationData?.status !== 'Draft') ? true :
+                                                  (viewQuotationId) ? true :
+                                                    false
                                             }
                                           />
                                         )}
@@ -950,60 +1001,67 @@ const CreateQuotation = () => {
                                     </div>
                                   </div>
 
-                                  {viewQuotationId || quotaionsId ? (
+
+                                  {viewQuotationId ? (
                                     <></>
                                   ) : (
-                                    <>
-                                      {index === fields.length - 1 ? (
-                                        <>
-                                          {index != 0 && (
+                                    quotaionsId && quotationData?.status !== 'Draft' ? (
+                                      <></>
+                                    ) : (
+                                      <>
+                                        {index === fields.length - 1 ? (
+                                          <>
+                                            {index != 0 && (
+                                              <Button
+                                                className="border-default-300 mt-5"
+                                                size="icon"
+                                                variant="outline"
+                                                type="button"
+                                                title="Remove"
+                                                onClick={() => remove(index)}
+                                              >
+                                                <Icon
+                                                  icon="heroicons:trash"
+                                                  className="w-5 h-5 text-default-300"
+                                                />
+                                              </Button>
+                                            )}
                                             <Button
                                               className="border-default-300 mt-5"
                                               size="icon"
                                               variant="outline"
                                               type="button"
-                                              title="Remove"
-                                              onClick={() => remove(index)}
+                                              title="Add Item"
+                                              onClick={() =>
+                                                append({
+                                                  itemName: "",
+                                                  itemPrice: "",
+                                                })
+                                              }
                                             >
-                                              <Icon
-                                                icon="heroicons:trash"
-                                                className="w-5 h-5 text-default-300"
-                                              />
+                                              <FiPlus className="w-5 h-5 text-default-300" />
                                             </Button>
-                                          )}
+                                          </>
+                                        ) : (
                                           <Button
                                             className="border-default-300 mt-5"
                                             size="icon"
                                             variant="outline"
                                             type="button"
-                                            title="Add Item"
-                                            onClick={() =>
-                                              append({
-                                                itemName: "",
-                                                itemPrice: "",
-                                              })
-                                            }
+                                            title="Remove"
+                                            onClick={() => remove(index)}
                                           >
-                                            <FiPlus className="w-5 h-5 text-default-300" />
+                                            <Icon
+                                              icon="heroicons:trash"
+                                              className="w-5 h-5 text-default-300"
+                                            />
                                           </Button>
-                                        </>
-                                      ) : (
-                                        <Button
-                                          className="border-default-300 mt-5"
-                                          size="icon"
-                                          variant="outline"
-                                          type="button"
-                                          title="Remove"
-                                          onClick={() => remove(index)}
-                                        >
-                                          <Icon
-                                            icon="heroicons:trash"
-                                            className="w-5 h-5 text-default-300"
-                                          />
-                                        </Button>
-                                      )}
-                                    </>
+                                        )}
+                                      </>
+                                    )
                                   )}
+
+
                                 </div>
                               </div>
                             ))}
@@ -1012,46 +1070,43 @@ const CreateQuotation = () => {
                       </div>
                     )}
 
-                    {!jobCardI1d && !reCreateID && !supplementId && (
-                      <div className="w-full flex justify-between gap-4">
-                        <div className="w-[20rem]">
-                          <Label htmlFor="startDate" className="font-bold">
-                            Status
-                          </Label>
 
-                          <div className="flex gap-2 w-full">
-                            <Controller
-                              name="quStatus"
-                              control={control}
-                              render={({ field: { onChange, value } }) => (
-                                <Select
-                                  className="react-select w-full"
-                                  classNamePrefix="select"
-                                  id="quStatus"
-                                  styles={
-                                    {
-                                      /* your custom styles */
-                                    }
-                                  }
-                                  options={getStatusList()}
-                                  onFocus={() => setIsFocused(true)}
-                                  onBlur={() => setIsFocused(false)}
-                                  onChange={(selectedOption) => {
-                                    onChange(selectedOption.value);
-                                    handleStatusUpdate(selectedOption.value);
-                                  }}
-                                  value={AllOptions?.find(
-                                    (option) => option.value === value
-                                  )}
-                                  isDisabled={
-                                    !isSelectEnabled || !isStatusEditable
-                                  }
-                                />
-                              )}
-                            />
+
+                    {quotaionsId && quotationData?.status === 'Draft' ? (
+                      <></> // Render nothing if quotaionsId exists and quotationData.status is 'Draft'
+                    ) : (
+                      // Render the status section if jobCardI1d, reCreateID, and supplementId are all falsy
+                      !jobCardI1d && !reCreateID && !supplementId && (
+                        <div className="w-full flex justify-between gap-4">
+                          <div className="w-[20rem]">
+                            <Label htmlFor="startDate" className="font-bold">
+                              Status
+                            </Label>
+                            <div className="flex gap-2 w-full">
+                              <Controller
+                                name="quStatus"
+                                control={control}
+                                render={({ field: { onChange, value } }) => (
+                                  <Select
+                                    className="react-select w-full"
+                                    classNamePrefix="select"
+                                    id="quStatus"
+                                    options={getStatusList()}
+                                    onFocus={() => setIsFocused(true)}
+                                    onBlur={() => setIsFocused(false)}
+                                    onChange={(selectedOption) => {
+                                      onChange(selectedOption.value);
+                                      handleStatusUpdate(selectedOption.value);
+                                    }}
+                                    value={AllOptions?.find((option) => option.value === value)}
+                                    isDisabled={!isSelectEnabled || !isStatusEditable}
+                                  />
+                                )}
+                              />
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      )
                     )}
 
                     {quStatus === "Approved" && (
@@ -1137,20 +1192,10 @@ const CreateQuotation = () => {
                     </>
                   ) : (
                     <>
+
+
+
                       <div className="flex items-end gap-3">
-                        {!quotaionsId && (
-                          <Button
-                            className="ml-auto"
-                            type="submit"
-                            variant="primary"
-                            disabled={loading}
-                            onClick={() => {
-                              setSnewtatus("Draft");
-                            }}
-                          >
-                            {loading ? "Loading..." : "Save Draft"}
-                          </Button>
-                        )}
 
                         <Button
                           className="ml-auto"
@@ -1158,20 +1203,40 @@ const CreateQuotation = () => {
                           variant="primary"
                           disabled={loading}
                           onClick={() => {
-                            setSnewtatus("Pending");
+                            setSnewtatus("Draft");
+                          }}
+                        >
+                          {loading ? "Loading..." : "Save Draft"}
+                        </Button>
+
+
+
+
+                        <Button
+                          className="ml-auto"
+                          type="submit"
+                          variant="primary"
+                          disabled={loading}
+                          onClick={() => {
+                            setSnewtatus("Submitted");
                           }}
                         >
                           {loading
                             ? "Loading..."
                             : quotaionsId
-                            ? "Update "
-                            : reCreateID
-                            ? "Re-create"
-                            : "Create"}
+                              ? quotationData?.status === 'Draft'
+                                ? "Submit"
+                                : "Update"
+                              : reCreateID
+                                ? "Re-create"
+                                : "Create"}
                         </Button>
                       </div>
                     </>
                   )}
+
+
+
                 </CardFooter>
               </Card>
             </div>

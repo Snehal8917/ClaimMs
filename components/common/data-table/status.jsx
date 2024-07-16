@@ -1,26 +1,39 @@
 export const StatusList = [
   {
+    label: "Draft",
+    value: "Draft",
+  },
+  {
     label: "Pending",
     value: "Pending",
   },
   {
-    label: "Approved",
-    value: "Approved",
+    label: "In-Progress",
+    value: "In-Progress",
   },
+  // {
+  //   label: "Approved",
+  //   value: "Approved",
+  // },
   {
     label: "Completed",
     value: "Completed",
   },
   {
-    label: "Unpaid",
-    value: "Unpaid",
+    label: "Re-Assigned",
+    value: "Re-Assigned",
   },
   {
-    label: "Paid",
-    value: "Paid",
+    label: "Done",
+    value: "Done",
   },
-  {
-    label: "Draft",
-    value: "Draft",
-  },
+  // {
+  //   label: "Unpaid",
+  //   value: "Unpaid",
+  // },
+  // {
+  //   label: "Paid",
+  //   value: "Paid",
+  // },
+
 ];

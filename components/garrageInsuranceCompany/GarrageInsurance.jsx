@@ -1,7 +1,7 @@
 "use client";
 import {
-  deleteInsurance,
-  getInsuranceCompanies,
+    deleteInsurance,
+    getGarrageInsuranceCompanies
 } from "@/action/companyAction/insurance-action";
 import BasicDataTable from "@/components/common/data-table/basic-table";
 import DialogPlacement from "@/components/common/dialog/dialog-placement";
@@ -14,11 +14,10 @@ import { Plus } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import GarrageInsurance from '@/components/garrageInsuranceCompany/GarrageInsurance'
 
-const InsuranceListPage = () => {
+const GarrageInsurance = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedInsurance, setSelectedInsurance] = useState(null);
   const [searchString, setSearchString] = useState("");
@@ -31,6 +30,8 @@ const InsuranceListPage = () => {
   const { data: session, status } = useSession();
 
   const role = session?.role;
+
+  console.log("log", role);
 
   const columns = [
     {
@@ -127,7 +128,7 @@ const InsuranceListPage = () => {
             >
               <Icon icon="heroicons:eye" className="w-5 h-5" />
             </Button>
-            {session?.role === "superAdmin" && (
+            {session?.role === "company" && (
               <>
                 <Button
                   size="icon"
@@ -138,16 +139,6 @@ const InsuranceListPage = () => {
                   }}
                 >
                   <Icon icon="heroicons:pencil-square" className="w-5 h-5" />
-                </Button>
-                <Button
-                  size="icon"
-                  className="h-9 w-9 rounded bg-default-100 dark:bg-default-200 text-default-500 hover:text-primary-foreground"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteClick(insuranceId);
-                  }}
-                >
-                  <Icon icon="heroicons:trash" className="w-5 h-5" />
                 </Button>
               </>
             )}
@@ -193,7 +184,7 @@ const InsuranceListPage = () => {
     queryKey: ["getInsuranceList", pageIndex, pageSize],
     queryFn: () => {
       setTableLoading(true);
-      return getInsuranceCompanies({
+      return getGarrageInsuranceCompanies({
         page: pageIndex + 1,
         size: pageSize,
         all: false,
@@ -203,7 +194,6 @@ const InsuranceListPage = () => {
         setComponentLoading(false);
       });
     },
-    enabled: role === "superAdmin",
   });
 
   useEffect(() => {
@@ -220,60 +210,58 @@ const InsuranceListPage = () => {
 
   if (error) return <div>Error loading data</div>;
   if (componentLoading) return <div>Loading...</div>;
-  if (session.role === 'company') {
-    return <GarrageInsurance />;
-  }
+
   return (
     <Fragment>
-    {session.role === 'superAdmin' && (
-      <>
-        <div className="flex justify-between">
-          <Breadcrumbs>
-            <BreadcrumbItem>Menus</BreadcrumbItem>
-            <BreadcrumbItem>Insurance Companies</BreadcrumbItem>
-          </Breadcrumbs>
-          <Button asChild>
-            <Link href="/insurance-list/add_insurance">
-              <Plus className="w-5 h-5 ltr:mr-2 rtl:ml-2" />
-              Create Company
-            </Link>
-          </Button>
-        </div>
-        <div className="mt-4 space-y-5">
-          <Card>
-            <CardHeader>
-              <CardTitle>Insurance Companies</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <BasicDataTable
-                data={data?.data?.insuranceCompany || []}
-                filterPlaceHolder="Company Name"
-                searchString={searchString}
-                setSearchString={setSearchString}
-                columns={columns}
-                pageIndex={pageIndex}
-                pagination={data?.pagination}
-                pageSize={pageSize}
-                setPageIndex={setPageIndex}
-                setPageSize={setPageSize}
-                pageCount={data?.pagination?.totalPages || 0}
-                tableLoading={tableLoading}
-                handleViewClick={handleInsuranceView}
-                rowClickable
-              />
-            </CardContent>
-          </Card>
-        </div>
-        <DialogPlacement
-          isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
-          onDelete={handleDeleteConfirm}
-          message="Are you sure you want to delete this Company?"
-        />
-      </>
-    )}
-  </Fragment>
+      {session.role === "company" && (
+        <>
+          <div className="flex justify-between">
+            <Breadcrumbs>
+              <BreadcrumbItem>Menus</BreadcrumbItem>
+              <BreadcrumbItem>Insurance Companies</BreadcrumbItem>
+            </Breadcrumbs>
+            {/* <Button asChild>
+              <Link href="/insurance-list/add_insurance">
+                <Plus className="w-5 h-5 ltr:mr-2 rtl:ml-2" />
+                Create Company
+              </Link>
+            </Button> */}
+          </div>
+          <div className="mt-4 space-y-5">
+            <Card>
+              <CardHeader>
+                <CardTitle>Insurance Companies</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <BasicDataTable
+                  data={data?.data?.garageInsurance || []}
+                  filterPlaceHolder="Company Name"
+                  searchString={searchString}
+                  setSearchString={setSearchString}
+                  columns={columns}
+                  pageIndex={pageIndex}
+                  pagination={data?.pagination}
+                  pageSize={pageSize}
+                  setPageIndex={setPageIndex}
+                  setPageSize={setPageSize}
+                  pageCount={data?.pagination?.totalPages || 0}
+                  tableLoading={tableLoading}
+                  handleViewClick={handleInsuranceView}
+                  rowClickable
+                />
+              </CardContent>
+            </Card>
+          </div>
+          <DialogPlacement
+            isOpen={modalOpen}
+            onClose={() => setModalOpen(false)}
+            onDelete={handleDeleteConfirm}
+            message="Are you sure you want to delete this Company?"
+          />
+        </>
+      )}
+    </Fragment>
   );
 };
 
-export default InsuranceListPage;
+export default GarrageInsurance;

@@ -16,7 +16,7 @@ import Select from "react-select";
 const RoleList = [
   { value: "CSR", label: "CSR" },
   { value: "Technician", label: "Technician" },
-  { value: "InspectionStaff", label: "Inspection Staff" },
+  { value: "Surveyor", label: "Surveyor" },
 ];
 
 const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
@@ -45,10 +45,10 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
     (role === "company" ||
       (role === "employee" &&
         ((designation === "Technician" &&
-          (initialStatus === "InProgress" || initialStatus === "Re-Assigned")) ||
-          (designation === "InspectionStaff" &&
+          (initialStatus === "In-Progress" || initialStatus === "Re-Assigned")) ||
+          (designation === "Surveyor" &&
             initialStatus === "Completed"))));
-  const isStatusEditable = ["InProgress","Approved", "Completed", "Re-Assigned"].includes(
+  const isStatusEditable = ["In-Progress","Approved", "Completed", "Re-Assigned"].includes(
     initialStatus
   );
   // const isStatusEditable = initialStatus !== "Done";
@@ -159,7 +159,7 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
       return CompanyStatusList;
     } else if (role === "employee" && designation === "Technician") {
       return TechnicianStatusList;
-    } else if (role === "employee" && designation === "InspectionStaff") {
+    } else if (role === "employee" && designation === "Surveyor") {
       return inspectionStaffStatusList;
     } else {
       return [];
@@ -171,8 +171,8 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
       label: "Pending",
     },
     {
-      value: "InProgress",
-      label: "InProgress",
+      value: "In-Progress",
+      label: "In-Progress",
     },
     {
       value: "Unpaid",
@@ -208,7 +208,7 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
                   <div className="w-full lg:w-[48%] space-y-4">
                     <div className="">
                       <Label htmlFor="details" className="font-bold">
-                        Description
+                        Notes
                       </Label>
                       <div className="flex gap-2 w-full mt-1 ml-1">
                         <label>{jobcardData?.details}</label>

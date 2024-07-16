@@ -15,6 +15,9 @@ import BasicLineChart from "./components/line-chart.jsx";
 import ReportsCard from "./components/reports";
 import TopBrowserChart from "./components/top-browser-chart.jsx";
 import WelcomeBlock from "./components/welcome-block";
+import { getUserMeAction } from "@/action/auth-action.js";
+import { Plus } from "lucide-react";
+import Link from "next/link";
 
 const ProjectPageView = ({ trans }) => {
   const { data: session, status } = useSession();
@@ -24,19 +27,38 @@ const ProjectPageView = ({ trans }) => {
   const [resetDate, setResetDate] = useState(false);
   const [selectedTab, setSelectedTab] = useState("monthly");
 
+  const {
+    data: userData,
+    error: userError,
+    isLoading: userLoading,
+  } = useQuery({
+    queryKey: ["userMe"],
+    queryFn: () => getUserMeAction(session.jwt),
+    enabled: !!session?.jwt, // Only run the query if the token is available
+  });
+
   useEffect(() => {
     if (status === "authenticated" && session) {
       setTitle(
         session.role === "superAdmin"
           ? "(Super Admin)"
           : session.role === "employee"
-          ? "(Employee)"
+          ?  userData?.data?.userId?.designation
           : session.role === "company"
           ? "(Company)"
           : ""
       );
     }
   }, [status, session]);
+  const role = session?.role;
+  const isEmployee = role === "employee";
+  const isCompany = role === "company";
+
+  const PERMISSION_CREATE_JOBCARD =
+  userData?.data?.userId?.permissionId?.jobCard?.create;
+
+  const CREATED_USER_ROLE = userData?.data?.userId?.designation;
+
 
   const {
     data: dashboardData,
@@ -114,6 +136,9 @@ const ProjectPageView = ({ trans }) => {
     return labels.map((label) => data[label] || 0);
   };
 
+  const canCreateJobCard =
+  (PERMISSION_CREATE_JOBCARD && isEmployee && CREATED_USER_ROLE === "CSR");
+
   const xAxisLabels = generateXAxisLabels(selectedTab);
   const chartData =
     selectedTab === "monthly"
@@ -124,9 +149,22 @@ const ProjectPageView = ({ trans }) => {
     <div className="space-y-6">
       <div className="flex items-center flex-wrap justify-between gap-4">
         <div className="text-2xl font-medium text-default-800">
-          Dashboard{title}
+          Dashboard {title}
         </div>
         <div className="flex justify-center items-center gap-4">
+        <Button
+          asChild
+          className={`${canCreateJobCard ? "" : "disable cursor-not-allowed"}`}
+        >
+          {canCreateJobCard ? (
+            <Link href="/job-card/create">
+              <Plus className="w-5 h-5 ltr:mr-2 rtl:ml-2" />
+              Open Job Card
+            </Link>
+          ) : (
+            <> </>
+          )}
+        </Button>
           <Button
             className={getButtonClassName("today")}
             variant="outline"

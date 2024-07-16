@@ -48,7 +48,7 @@ export const quotaionFormSchema = z.object({
         ),
     })
   ),
-  quStatus: z.string().optional(), 
+  quStatus: z.string().optional(),
   quoLpo: z.array(z.any()).optional(),
 }).superRefine((data, ctx) => {
   if (data.quStatus === 'Approved' && (!data.quoLpo || data.quoLpo.length === 0)) {
@@ -102,10 +102,14 @@ export const quotationFormSchemaSection = z.object({
     z.object({
       itemsList: z.array(
         z.object({
-          itemName: z.string().optional(),
+          itemName: z.string().refine((value) => value.trim() !== "", {
+            message: "name is required",
+          })
         })
       ),
-      price: z.string().optional(),
+      price: z.string().refine((value) => value.trim() !== "", {
+        message: "price is required",
+      }),
     })
   ),
 

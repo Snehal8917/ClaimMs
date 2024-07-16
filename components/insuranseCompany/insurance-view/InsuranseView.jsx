@@ -3,14 +3,13 @@
 import { getSingleInsurance } from "@/action/companyAction/insurance-action";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import CarListViewpage from "../carList-view/CarListViewpage";
 import CompanyView from "../company-view/CopmpanyView";
 import CustomerListView from "../customerList-view/CustomerListView";
 import JobCardListPage from "../jobcardlist-view/jobCardList";
-import { useSession } from "next-auth/react";
-import { getUserMeAction } from "@/action/auth-action";
 
 const InsuranceView = () => {
   const [activeTab, setActiveTab] = useState("CompanyDetail");
@@ -46,7 +45,7 @@ const InsuranceView = () => {
 
   return (
     <div className="flex flex-col justify-start items-start gap-6">
-     {/* {activeTab === "CompanyDetail" && InsuranceCompanyData?.banner && (
+      {/* {activeTab === "CompanyDetail" && InsuranceCompanyData?.banner && (
         <div
           className="w-full h-60 bg-contain bg-center bg-no-repeat rounded-lg mb-4"
           style={{ backgroundImage: `url(${InsuranceCompanyData.banner})` }}
@@ -64,12 +63,12 @@ const InsuranceView = () => {
           <AvatarFallback>{InsuranceCompanyData?.companyName}</AvatarFallback>
         </Avatar>
         <div className="flex flex-col justify-center items-start gap-3">
-          <div className="flex justify-center items-center gap-2">
+          {/* <div className="flex justify-center items-center gap-2">
             <span className="font-medium text-xl">Portal :</span>
             <span className="text-base">
               {InsuranceCompanyData?.companyPortal}
             </span>
-          </div>
+          </div> */}
           <div className="flex justify-center items-center gap-2">
             <span className="text-base font-medium">Company Email :</span>
             <span className="bg-green-100 text-green-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded">
@@ -78,7 +77,7 @@ const InsuranceView = () => {
           </div>
         </div>
       </div>
-      <div className="flex space-x-4 bg-muted p-2 rounded-lg w-[34rem] bg-[#6478B]">
+      <div className="flex space-x-4 bg-muted p-2 rounded-lg w-auto bg-[#6478B]">
         <button
           className={`px-4 py-2 rounded-lg hover:bg-muted/80 ${
             activeTab === "CompanyDetail"

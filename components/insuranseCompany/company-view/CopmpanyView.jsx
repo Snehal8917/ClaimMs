@@ -1,5 +1,5 @@
 "use client";
-import { getSingleInsurance } from "@/action/companyAction/insurance-action";
+import { getGarageInsuranceCompany, getSingleInsurance } from "@/action/companyAction/insurance-action";
 import {
   Card,
   CardContent,
@@ -8,11 +8,15 @@ import {
 import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+
+
 
 const CompanyView = () => {
+  const { data: session } = useSession();
   const params = useParams();
   const insuranceId = params?.view_insurance;
-
+  const role = session?.role;
   const {
     isLoading,
     isError,
@@ -20,8 +24,15 @@ const CompanyView = () => {
     error,
   } = useQuery({
     queryKey: ["InsuranceCompanyData", insuranceId],
-    queryFn: () => getSingleInsurance(insuranceId),
-    enabled: !!insuranceId,
+    queryFn: () => {
+      if (role === "company") {
+        return getGarageInsuranceCompany(insuranceId);
+      } else if (role === "superAdmin") {
+        return getSingleInsurance(insuranceId);
+      }
+      return Promise.reject(new Error("Invalid role"));
+    },
+    enabled: !!insuranceId && (role === "company" || role === "superAdmin"),
     retry: false,
   });
 

@@ -35,7 +35,7 @@ export const useCreateQuotaion = ({ CsrList }) => {
     queryFn: () => getSingleJobCardAction(jobCardId),
     enabled: !!jobCardId,
     retry: false,
-    onSuccess: (data) => {},
+    onSuccess: (data) => { },
   });
 
   const {
@@ -52,7 +52,7 @@ export const useCreateQuotaion = ({ CsrList }) => {
     enabled:
       !!quotaionsId || !!viewQuotationId || !!reCreateID || !!supplementId,
     retry: false,
-    onSuccess: (data) => {},
+    onSuccess: (data) => { },
   });
 
   const addQuotationMutation = useMutation({
@@ -178,8 +178,10 @@ export const useCreateQuotaion = ({ CsrList }) => {
     }
 
     try {
-      if (quotaionsId || viewQuotationId) {
-        const payLoad = {
+      if (quotaionsId && quotationData?.status === "Draft") {
+        await updateQuotationMutation.mutateAsync(payLoad);
+      } else if ((quotaionsId && quotationData?.status !== "Draft") || viewQuotationId) {
+        const payLoadUpdate = {
           date: dateTime.toISOString().split("T")[0],
           time: timeFormatted,
           customer: quCustomer,
@@ -193,8 +195,7 @@ export const useCreateQuotaion = ({ CsrList }) => {
           sectionItemList: sectionItems,
         };
 
-        // console.log("payload Qyuotauon:-", quStatus);
-        await updateQuotationMutation.mutateAsync(payLoad);
+        await updateQuotationMutation.mutateAsync(payLoadUpdate);
       } else if (supplementId) {
         await addSupQuotationMutation.mutateAsync(payLoad);
       } else {
@@ -211,13 +212,33 @@ export const useCreateQuotaion = ({ CsrList }) => {
     dateString ? new Date(dateString).toISOString().split("T")[0] : "";
 
   const initialValues = useMemo(() => {
-    if (quotaionsId && quotationData) {
+    if (quotaionsId && quotationData?.status === 'Draft') {
       return {
         quDateAndTime: formatDate(quotationData?.date) || "",
         quCustomer: quotationData?.customer?._id || "",
         quCar: quotationData?.car?._id || "",
         quInsuranceCom: quotationData?.insuranceCompany?._id || "",
         quJobCard: quotationData?.jobCardId?._id || "",
+        qudaystocomplete: quotationData?.daysToQuote || "",
+        quCustomerCareRepresentative: quotationData?.CCRId || "",
+        itemList: quotationData?.listOfItems || [
+          { itemName: "", itemPrice: "" },
+        ],
+        quStatus: quotationData?.status || "Draft",
+        quoLpo: quotationData?.lpo || [],
+        sectionItems: quotationData?.sectionItemList?.length > 0 ?
+          quotationData.sectionItemList :
+          [{ itemslist: [{ itemName: "" }], price: "" }]
+      };
+    }
+    else if (quotaionsId && quotationData) {
+      return {
+        quDateAndTime: formatDate(quotationData?.date) || "",
+        quCustomer: quotationData?.customer?._id || "",
+        quCar: quotationData?.car?._id || "",
+        quInsuranceCom: quotationData?.insuranceCompany?._id || "",
+        quJobCard: quotationData?.jobCardId?._id || "",
+        // quJobCard: quotationData?.jobCardId?.jobCardNumber,
         qudaystocomplete: quotationData?.daysToQuote || "",
         quCustomerCareRepresentative: quotationData?.CCRId || "",
         itemList: quotationData?.listOfItems || [
@@ -238,6 +259,7 @@ export const useCreateQuotaion = ({ CsrList }) => {
         quCustomer: quotationData?.customer?._id || "",
         quCar: quotationData?.car?._id || "",
         quInsuranceCom: quotationData?.insuranceCompany?._id || "",
+        
         quJobCard: quotationData?.jobCardId?._id || "",
         qudaystocomplete: quotationData?.daysToQuote || "",
         quCustomerCareRepresentative: quotationData?.CCRId || "",

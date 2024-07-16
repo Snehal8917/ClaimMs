@@ -85,6 +85,7 @@
     "eslint": "8.48.0",
     "eslint-config-next": "14.0.1",
     "framer-motion": "^10.18.0",
+    "fuzzball": "^2.1.2",
     "google-map-react": "^2.2.1",
     "html-to-image": "^1.11.11",
     "leaflet": "^1.9.4",

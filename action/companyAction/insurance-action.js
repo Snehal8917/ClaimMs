@@ -1,5 +1,8 @@
 import { addInsuranceCompanyUser, deleteInsuranceCompany, editInsuranceCompanyUser, getInsuranceCompanyById, getInsuranceCompanyUsers, updateInsuranceCompanyById } from "../../config/companyConfig/insurancecompany.config";
+import { getGarageInsuranceCompanyById, getGarrageInsuranceCompanyList, updateGarageInsuranceCompanyById } from "../../config/companyConfig/garrageinsurance.config";
 
+
+// For SuperAdmin
 export const addInsuranceCompany = async (data) => {
     // console.log(data, config, "data");
     const response = await addInsuranceCompanyUser(data);
@@ -26,8 +29,18 @@ export const updateInsurance = async (id, updatedFields) => {
 };
 
 
+//  For company Garage
+export const getGarrageInsuranceCompanies = async ({ page = 1, size = 10, all = false, search = "" }) => {
+    const response = await getGarrageInsuranceCompanyList({ page, size, all, search });
+    return response;
+  }
+  
+  
+  export const getGarageInsuranceCompany = async (id) => {
+    const response = await getGarageInsuranceCompanyById(id);
+    return response.data;
+  };
 
-// export const editInsuranceCompany = async (data) => {
-//     const response = await editInsuranceCompanyUser(data);
-//     return response;
-// }
+  export const updateGarrageInsurance = async (id, updatedFields) => {
+    return await updateGarageInsuranceCompanyById(id, updatedFields);
+};

@@ -1,11 +1,8 @@
 "use client";
-// import { deleteCarAction, getCars } from "@/action/admin-action";
+import { getUserMeAction } from "@/action/auth-action";
 import {
-  updateCarAction,
-  getSingleCarAction,
   deleteCarAction,
-  getCars,
-  addCar,
+  getCars
 } from "@/action/companyAction/car-action";
 import DialogPlacement from "@/components/common/dialog/dialog-placement";
 import { BreadcrumbItem, Breadcrumbs } from "@/components/ui/breadcrumbs";
@@ -13,16 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Icon } from "@iconify/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowUpDown, Plus } from "lucide-react";
-import Image from "next/image";
+import { Plus } from "lucide-react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import BasicDataTable from "../../../../components/common/data-table/basic-table";
-import { useEffect } from "react";
-import { getUserMeAction } from "@/action/auth-action";
-import { useSession } from "next-auth/react";
 
 const CarListPage = () => {
   const { data: session } = useSession();
@@ -69,9 +63,7 @@ const CarListPage = () => {
       accessorKey: "model",
       header: "Model",
       cell: ({ row }) => (
-        <span className="whitespace-nowrap">
-          {row?.original?.model || "-"}
-        </span>
+        <span className="whitespace-nowrap">{row?.original?.model || "-"}</span>
       ),
     },
 
@@ -79,9 +71,7 @@ const CarListPage = () => {
       accessorKey: "make",
       header: "make",
       cell: ({ row }) => (
-        <span className="whitespace-nowrap">
-          {row?.original?.make || "-"}
-        </span>
+        <span className="whitespace-nowrap">{row?.original?.make || "-"}</span>
       ),
     },
 
@@ -196,13 +186,6 @@ const CarListPage = () => {
     }
   };
 
-  const handleDeleteConfirm = () => {
-    deleteMutation.mutate(companyId);
-    setModalOpen(false);
-    getCars();
-    refetch();
-  };
-
   const { data, error, refetch } = useQuery({
     queryKey: ["getCars", pageIndex, pageSize],
     queryFn: () => {
@@ -232,6 +215,11 @@ const CarListPage = () => {
       refetch();
     }
   }, [pageIndex, pageSize, refetch, searchString]);
+  const handleDeleteConfirm = () => {
+    deleteMutation.mutate(companyId);
+    setModalOpen(false);
+    refetch();
+  };
 
   // if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error loading data</div>;

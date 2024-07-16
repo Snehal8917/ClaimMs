@@ -28,6 +28,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import toast from "react-hot-toast";
 import Select from "react-select";
 import { z } from "zod";
+import { ratio } from "fuzzball";
 
 import { getInsuranceCompanies } from "@/action/companyAction/insurance-action";
 import { getMasterCarDataAction } from "@/action/masterCar/mastercar-action";
@@ -35,6 +36,7 @@ import LayoutLoader from "@/components/layout-loader";
 import { useParams, useRouter } from "next/navigation";
 import { getUserMeAction } from "@/action/auth-action";
 import { useSession } from "next-auth/react";
+import { Loader2 } from "lucide-react";
 // import { log } from "console";
 
 const commonSchema = z.object({
@@ -131,7 +133,7 @@ const step2Schema = z.object({
 
 // Step 3 schema
 const step3Schema = z.object({
-  details: z.string().min(1, { message: "Description is required" }),
+  details: z.any().optional(),
   startDate: z.any().optional(),
   // status: z.any().optional(),
 });
@@ -177,13 +179,9 @@ const JobCardPage = () => {
   const [drivingData, setDrivingData] = useState([]);
   const [drivingApi, setDrivingApi] = useState(false);
 
-  const categories = ["Category 1", "Category 2", "Category 3"];
   const [currentInsId, setCurrentInsId] = useState("");
   const [apiCalled, setApiCalled] = useState(false);
   const [exctractCarData, setExctractCarData] = useState("");
-  const [category, setCategory] = useState("");
-  const [comment, setComment] = useState("");
-  const [observations, setObservations] = useState([]);
   const [binaryFiles, setBinaryFiles] = useState([]);
   const [defaultDate, setDefaultDate] = useState("");
   const isInitialized = useRef(false);
@@ -226,20 +224,6 @@ const JobCardPage = () => {
   const CREATED_USER_ROLE = userData?.data?.userId?.role;
 
   const {
-    data: customersData,
-    isLoading: isCustomerLoading,
-    error: customerError,
-  } = useQuery({
-    queryKey: ["getCustomerListAction", pageIndex, pageSize],
-    queryFn: () =>
-      getCustomerListAction({
-        page: pageIndex + 1,
-        size: pageSize,
-        all: false,
-      }),
-  });
-
-  const {
     isLoading: isLoadingCompanyData,
     isError: isErrorCompanyData,
     data: jobcardData,
@@ -267,8 +251,6 @@ const JobCardPage = () => {
 
   const handleMakeChange = async (selectedMake) => {
     try {
-      // resetField("carDetails.model");
-      // resetField("carDetails.trim");
       const response = await getMasterCarDataAction({
         params: { brand: selectedMake },
       });
@@ -355,7 +337,6 @@ const JobCardPage = () => {
     mode: "all",
   });
   const beforePhotosList = watch("documents.beforePhotos");
-  console.log(beforePhotosList,"afterPhotos");
   const selectedMake = useWatch({
     control,
     name: "carDetails.make",
@@ -417,16 +398,6 @@ const JobCardPage = () => {
       setLoadingCarExtract(false);
     },
   });
-  // useEffect(() => {
-  //   if (jobcardData || paramId || jobCardDataResponse) {
-  //     if (jobcardData) {
-  //       console.log("jobcardData", jobcardData.status);
-  //     }
-  //     const status = jobcardData?.status;
-  //     const updatedStatus = status === "Draft" ? "Pending" : status;
-  //     setValue("status", updatedStatus);
-  //   }
-  // }, [jobcardData, paramId, jobCardDataResponse]);
   const updatePostMutation = useMutation({
     mutationFn: async (data) => {
       const formData = new FormData();
@@ -462,10 +433,7 @@ const JobCardPage = () => {
                   : ""
               );
             }
-            if (
-              beforePhotosList &&
-              beforePhotosList?.length > 0
-            ) {
+            if (beforePhotosList && beforePhotosList?.length > 0) {
               Array.from(beforePhotosList).forEach((photo) => {
                 formData.append("beforePhotos", photo);
               });
@@ -479,7 +447,7 @@ const JobCardPage = () => {
       if (activeStep === 3) {
         const statusToSend =
           !jobcardData?.status || jobcardData?.status === "Draft"
-            ? "InProgress"
+            ? "In-Progress"
             : jobcardData?.status;
         formData.append("status", statusToSend);
         if (CREATED_USER_ROLE === "employee" && CREATED_USER_ID) {
@@ -720,10 +688,6 @@ const JobCardPage = () => {
         "insuranceDetails.currentInsurance",
         exctractCarData.data?.currentInsurer
       );
-      // setValue(
-      //   "startDate",
-      //   exctractCarData.insuranceExpiryDate.substring(0, 10)
-      // );
     }
   }, [extractCarMutation.isSuccess, exctractCarData]);
   // console.log(emiratesData, "emiratesData");
@@ -763,14 +727,27 @@ const JobCardPage = () => {
       const licenceExpiryDate = formatDate(
         drivingData?.data?.licenceExpiryDate
       );
-      setValue("licenceIssueDate", licenceIssueDate);
+      const drivingFullName = drivingData?.data?.fullName;
+      const emiratesFullName = emiratesData?.data?.fullName;
 
-      setValue("fullName", drivingData?.data?.fullName);
+      if (emiratesFullName) {
+        if (ratio(drivingFullName, emiratesFullName) > 80) {
+          setValue("fullName", drivingFullName);
+        } else {
+          toast.error(
+            "The full name from driving data does not match with Emirates data."
+          );
+        }
+      } else {
+        setValue("fullName", drivingFullName);
+      }
+      setValue("licenceIssueDate", licenceIssueDate);
       setValue("licenceNo", drivingData?.data?.licenceNo);
       setValue("licenceExpiryDate", licenceExpiryDate);
       setValue("tcNo", drivingData?.data?.dlTcNo);
     }
   }, [extractDrivingMutation.isSuccess, drivingData]);
+
   useEffect(() => {
     if (jobcardData && paramId) {
       const {
@@ -856,6 +833,8 @@ const JobCardPage = () => {
       }
     }
   }, [jobcardData]);
+
+  const { mutate, isLoading:UpdateLoading } = updatePostMutation;
 
   return (
     <div>
@@ -1661,10 +1640,10 @@ const JobCardPage = () => {
                               <div className="w-full space-y-4">
                                 <div className="w-full lg:w-full">
                                   <div>
-                                    <Label htmlFor="details">Description</Label>
+                                    <Label htmlFor="details">Notes</Label>
                                     <div className="flex gap-2 w-full">
                                       <Textarea
-                                        placeholder="Details..."
+                                        placeholder="Notes..."
                                         {...register("details")}
                                         id="details"
                                         className={cn("w-full", {
@@ -1916,19 +1895,27 @@ const JobCardPage = () => {
                                         }
                                       </div>
                                     )}
-                                    {jobcardData?.documents?.beforePhotos?.length > 0  && (
-                     <div className="mt-2 grid grid-cols-3 gap-2">
-                       {jobcardData?.documents?.beforePhotos?.map((photo, index) => (
-                         <div key={index} className="relative">
-                           <img
-                             src={photo}
-                             alt={`File Preview ${index + 1}`}
-                             className="w-32 h-32 object-cover"
-                           />
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                                    {jobcardData?.documents?.beforePhotos
+                                      ?.length > 0 && (
+                                      <div className="mt-2 grid grid-cols-3 gap-2">
+                                        {jobcardData?.documents?.beforePhotos?.map(
+                                          (photo, index) => (
+                                            <div
+                                              key={index}
+                                              className="relative"
+                                            >
+                                              <img
+                                                src={photo}
+                                                alt={`File Preview ${
+                                                  index + 1
+                                                }`}
+                                                className="w-32 h-32 object-cover"
+                                              />
+                                            </div>
+                                          )
+                                        )}
+                                      </div>
+                                    )}
 
                                     {filePreviews1?.length > 0 && (
                                       <div className="mt-2 grid grid-cols-3 gap-2">
@@ -2014,7 +2001,14 @@ const JobCardPage = () => {
                     hidden: activeStep < 3,
                   })}
                 >
-                  Submit
+                  {UpdateLoading ? (
+                    <div className="flex items-center">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading ...
+                    </div>
+                  ) : (
+                    "Submit"
+                  )}
                 </Button>
               </CardFooter>
             </form>

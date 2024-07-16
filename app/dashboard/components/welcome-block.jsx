@@ -16,7 +16,7 @@ const WelcomeBlock = ({ data, session }) => {
       role: ["superAdmin", "employee", "company"],
     },
     {
-      title: "Total Inprogress Jobcards",
+      title: "Total In-Progress Jobcards",
       total: data?.data?.totalInprogressJobcards || 0,
       role: ["superAdmin", "employee", "company"],
     },
