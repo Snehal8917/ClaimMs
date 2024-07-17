@@ -8,8 +8,8 @@ export const StatusList = [
     value: "Pending",
   },
   {
-    label: "In-Progress",
-    value: "In-Progress",
+    label: "In Progress",
+    value: "In Progress",
   },
   // {
   //   label: "Approved",

@@ -5,25 +5,32 @@ import { Home } from "lucide-react";
 import coverImage from "@/public/images/all-img/user-cover.png";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
+import Link from "next/link";
+
 const SettingsHeader = () => {
   return (
     <>
-      {/* <Breadcrumbs>
+      <Breadcrumbs>
         <BreadcrumbItem>
+        <Link href="/dashboard" className="hover:underline">
           <Home className="h-4 w-4" />
+          </Link>
         </BreadcrumbItem>
-        <BreadcrumbItem>Pages</BreadcrumbItem>
-        <BreadcrumbItem>Utility</BreadcrumbItem>
-        <BreadcrumbItem>User Profile</BreadcrumbItem>
-      </Breadcrumbs> */}
-      <Card className="mt-6 rounded-2xl ">
+        <BreadcrumbItem>
+          <Link href="/company-profile" className="hover:underline">
+            User Profile
+          </Link>
+        </BreadcrumbItem>
+        <BreadcrumbItem>Settings</BreadcrumbItem>
+      </Breadcrumbs>
+      {/* <Card className="mt-6 rounded-2xl overflow-hidden">
         <CardContent className="p-0">
           <div
-            className="relative h-[210px] xl:h-[296px] rounded-2xl w-full object-cover bg-no-repeat"
+           className="relative h-[240px] lg:h-[240px] rounded-t-2xl w-full bg-no-repeat bg-cover"
             style={{ backgroundImage: `url(${coverImage.src})` }}
           >
             <Button
-              className="absolute bottom-5 right-6 rounded px-5"
+              className="absolute bottom-5 right-6 rounded px-5 bg-primary text-white hover:bg-primary-dark"
               size="sm"
             >
               <Icon className="w-4 h-4 mr-1" icon="heroicons:pencil-square" />
@@ -31,7 +38,7 @@ const SettingsHeader = () => {
             </Button>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </>
   );
 };

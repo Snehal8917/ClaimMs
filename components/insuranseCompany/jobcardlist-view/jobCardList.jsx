@@ -16,13 +16,13 @@ import { useEffect } from "react";
 
 const statusOptions = [
   "Pending",
-  "In-Progress",
+  "In Progress",
   "Approved",
   "Unpaid",
   "Paid",
   "Draft",
 ];
-const statusOptions2 = ["Pending", "In-Progress", "Approved", "Unpaid", "Paid"];
+const statusOptions2 = ["Pending", "In Progress", "Approved", "Unpaid", "Paid"];
 const JobCardListPage = () => {
   const { data: session } = useSession();
   const [modalOpen, setModalOpen] = useState(false);

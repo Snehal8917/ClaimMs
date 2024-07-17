@@ -6,6 +6,9 @@ import {
   updateQuotationeById,
   genratePdfOfQuotation,
   supplementQuotation,
+  createAdQuotation,
+  getAdQuotationeById,
+  getAdQuotationAll,
 } from "../../config/quotationConfig/quotation.config";
 
 export const addQuotation = async (data) => {
@@ -58,5 +61,32 @@ export const getPDFGenrate = async (id) => {
 
 export const addsupplementQuotation = async (data) => {
   const response = await supplementQuotation(data);
+  return response;
+};
+
+
+//ad qu
+
+
+export const addAdQuotation = async (data) => {
+  const response = await createAdQuotation(data);
+  return response;
+};
+
+
+export const getAdSingleQuotation = async (id) => {
+  const response = await getAdQuotationeById(id);
+  return response.data;
+};
+
+
+export const getAllAdQuotation = async ({
+  page = 1,
+  size = 10,
+  all = false,
+  search = "",
+  jobCardId = "",
+}) => {
+  const response = await getAdQuotationAll({ page, size, all, search, jobCardId });
   return response;
 };

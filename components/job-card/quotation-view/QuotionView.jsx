@@ -337,6 +337,12 @@ const QuotationView = () => {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Quotations List</CardTitle>
+              {/* <Button asChild>
+                  <Link href={`/additional-quotation/create/${jobCardIEd}`}>
+                    <Plus className="w-5 h-5 ltr:mr-2 rtl:ml-2" />
+                    Create Additional Quotation
+                  </Link>
+                </Button> */}
               {!quotations.length > 0 && (
                 <Button asChild>
                   <Link href={`/quotations/create/${jobCardIEd}`}>
@@ -358,6 +364,7 @@ const QuotationView = () => {
               pagination={data?.pagination}
               pageSize={pageSize}
               setPageIndex={setPageIndex}
+              pageCount={data?.pagination?.totalPages || 0}
               setPageSize={setPageSize}
               tableLoading={tableLoading}
               refetch={refetch}

@@ -23,7 +23,7 @@ import toast from "react-hot-toast";
 
 import FileUploaderSingle from "@/components/common/file-uploader/file-uploader-single";
 import { getCSREmployeeAction } from "@/action/companyAction/employee-action";
-import { getInsuranceCompanies } from "@/action/companyAction/insurance-action";
+import { getInsuranceCompanies, getGarrageInsuranceCompanies } from "@/action/companyAction/insurance-action";
 import { getCustomerListAction } from "@/action/employeeAction/customer-action";
 import { getCars } from "@/action/companyAction/car-action";
 import { useCreateQuotaion } from "./../hook";
@@ -160,12 +160,12 @@ const CreateQuotation = () => {
   const { data: InsuranceCompaniesData } = useQuery({
     queryKey: ["getInsuranceCompanies"],
     queryFn: () =>
-      getInsuranceCompanies({
+      getGarrageInsuranceCompanies({
         all: true,
       }),
   });
 
-  const InsuranseCompanyList = InsuranceCompaniesData?.data?.map(
+  const InsuranseCompanyList = InsuranceCompaniesData?.data?.garageInsurance?.map(
     (insuranse_compnay) => ({
       value: insuranse_compnay._id,
       label: insuranse_compnay.companyName,
@@ -1208,10 +1208,6 @@ const CreateQuotation = () => {
                         >
                           {loading ? "Loading..." : "Save Draft"}
                         </Button>
-
-
-
-
                         <Button
                           className="ml-auto"
                           type="submit"
@@ -1243,7 +1239,6 @@ const CreateQuotation = () => {
           </div>
         </div>
       </form>
-      {/* <LpoComponent isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} />    */}
     </>
   );
 };

@@ -32,13 +32,16 @@ import LayoutLoader from "@/components/layout-loader";
 import Link from "next/link";
 import { useRef } from "react";
 
+import { ratio } from "fuzzball";
+
 const carSchema = z.object({
   value: z.string(),
   label: z.string(),
   // Add other fields if necessary
 });
 const schema = z.object({
-  email: z.string().email({ message: "Invalid email address" }),
+  // email: z.string().email({ message: "Invalid email address" }),
+  email: z.any().optional(),
   mobileNumber: z.any().optional(),
   fullName: z.any().optional(),
   customerEmiratesId: z.string().nonempty("Emirates Id is required"),
@@ -274,10 +277,22 @@ const CustomerPage = () => {
       const licenceExpiryDate = formatDate(
         drivingData?.data?.licenceExpiryDate
       );
-      setValue("licenceIssueDate", licenceIssueDate);
+      const drivingFullName = drivingData?.data?.fullName;
+      const emiratesFullName = emiratesData?.data?.fullName;
 
-      console.log(drivingData?.data, "drivingData?.data");
-      setValue("fullName", drivingData?.data?.fullName);
+      const fullName = emiratesFullName || drivingFullName;
+      const nameComparisonRatio = emiratesFullName
+        ? ratio(drivingFullName, emiratesFullName)
+        : 100;
+
+      if (nameComparisonRatio < 80) {
+        toast.error(
+          "The full name from driving data does not match with Emirates data."
+        );
+      }
+
+      setValue("fullName", fullName);
+      setValue("licenceIssueDate", licenceIssueDate);
       setValue("licenceNo", drivingData?.data?.licenceNo);
       setValue("licenceExpiryDate", licenceExpiryDate);
       setValue("tcNo", drivingData?.data?.dlTcNo);

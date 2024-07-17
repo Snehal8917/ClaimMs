@@ -85,3 +85,47 @@ export const supplementQuotation = async (data) => {
     throw error;
   }
 };
+
+
+///ad qu
+
+export const createAdQuotation = async (data) => {
+  try {
+    const response = await AxiosCreator.post("api/additional-quote/add", data);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+
+export const getAdQuotationeById = async (id) => {
+  try {
+    const response = await AxiosCreator.get(`/api/additional-quote/${id}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+
+export const getAdQuotationAll = async ({
+  page = 1,
+  size = 10,
+  all = false,
+  search = "",
+  jobCardId = "",
+}) => {
+  try {
+    const response = await AxiosCreator.get(
+      `/api/additional-quote?page=${page}&size=${size}&all=${all}&search=${search}&jobCardId=${jobCardId}`
+    );
+
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+
+//

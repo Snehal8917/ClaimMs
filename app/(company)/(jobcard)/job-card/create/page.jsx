@@ -30,7 +30,7 @@ import Select from "react-select";
 import { z } from "zod";
 import { ratio } from "fuzzball";
 
-import { getInsuranceCompanies } from "@/action/companyAction/insurance-action";
+import { getGarrageInsuranceCompanies, getInsuranceCompanies } from "@/action/companyAction/insurance-action";
 import { getMasterCarDataAction } from "@/action/masterCar/mastercar-action";
 import LayoutLoader from "@/components/layout-loader";
 import { useParams, useRouter } from "next/navigation";
@@ -74,15 +74,16 @@ const documentSchema = z.object({
 
 // Step 1 schema
 const step1Schema = z.object({
-  email: z
-    .string()
-    .optional()
-    .refine((value) => {
-      return value !== undefined && value.trim() !== "";
-    }, "Email is required")
-    .refine((value) => {
-      return /^\S+@\S+\.\S+$/.test(value);
-    }, "Invalid email format"),
+  // email: z
+  //   .string()
+  //   .optional()
+  //   .refine((value) => {
+  //     return value !== undefined && value.trim() !== "";
+  //   }, "Email is required")
+  //   .refine((value) => {
+  //     return /^\S+@\S+\.\S+$/.test(value);
+  //   }, "Invalid email format"),
+  email: z.string().optional(),
   mobileNumber: z
     .string()
     .refine((value) => {
@@ -278,7 +279,7 @@ const JobCardPage = () => {
   const { data: InsuranceCompaniesData } = useQuery({
     queryKey: ["getInsuranceCompanies"],
     queryFn: () =>
-      getInsuranceCompanies({
+      getGarrageInsuranceCompanies({
         all: true,
       }),
   });
@@ -292,7 +293,7 @@ const JobCardPage = () => {
   //   queryFn: () => getAllEmployee({ all: true }),
   // });
 
-  const InsuranseCompanyList = InsuranceCompaniesData?.data?.map(
+  const InsuranseCompanyList = InsuranceCompaniesData?.data?.garageInsurance?.map(
     (insuranse_compnay) => ({
       value: insuranse_compnay.companyName,
       label: insuranse_compnay.companyName,
@@ -327,12 +328,12 @@ const JobCardPage = () => {
       activeStep === 0
         ? step1Schema
         : activeStep === 1
-        ? step2Schema
-        : activeStep === 2
-        ? step3Schema
-        : activeStep === 3
-        ? step4Schema
-        : schema // default schema if none of the above conditions match
+          ? step2Schema
+          : activeStep === 2
+            ? step3Schema
+            : activeStep === 3
+              ? step4Schema
+              : schema // default schema if none of the above conditions match
     ),
     mode: "all",
   });
@@ -447,7 +448,7 @@ const JobCardPage = () => {
       if (activeStep === 3) {
         const statusToSend =
           !jobcardData?.status || jobcardData?.status === "Draft"
-            ? "In-Progress"
+            ? "In Progress"
             : jobcardData?.status;
         formData.append("status", statusToSend);
         if (CREATED_USER_ROLE === "employee" && CREATED_USER_ID) {
@@ -730,17 +731,18 @@ const JobCardPage = () => {
       const drivingFullName = drivingData?.data?.fullName;
       const emiratesFullName = emiratesData?.data?.fullName;
 
-      if (emiratesFullName) {
-        if (ratio(drivingFullName, emiratesFullName) > 80) {
-          setValue("fullName", drivingFullName);
-        } else {
-          toast.error(
-            "The full name from driving data does not match with Emirates data."
-          );
-        }
-      } else {
-        setValue("fullName", drivingFullName);
+      const fullName = emiratesFullName || drivingFullName;
+      const nameComparisonRatio = emiratesFullName
+        ? ratio(drivingFullName, emiratesFullName)
+        : 100;
+
+      if (nameComparisonRatio < 80) {
+        toast.error(
+          "The full name from driving data does not match with Emirates data."
+        );
       }
+
+      setValue("fullName", fullName);
       setValue("licenceIssueDate", licenceIssueDate);
       setValue("licenceNo", drivingData?.data?.licenceNo);
       setValue("licenceExpiryDate", licenceExpiryDate);
@@ -834,7 +836,7 @@ const JobCardPage = () => {
     }
   }, [jobcardData]);
 
-  const { mutate, isLoading:UpdateLoading } = updatePostMutation;
+  const { mutate, isLoading: UpdateLoading } = updatePostMutation;
 
   return (
     <div>
@@ -1547,13 +1549,13 @@ const JobCardPage = () => {
                                   </div>
                                   {errors?.insuranceDetails
                                     ?.currentInsurance && (
-                                    <div className="text-destructive mt-2">
-                                      {
-                                        errors?.insuranceDetails
-                                          ?.currentInsurance.message
-                                      }
-                                    </div>
-                                  )}
+                                      <div className="text-destructive mt-2">
+                                        {
+                                          errors?.insuranceDetails
+                                            ?.currentInsurance.message
+                                        }
+                                      </div>
+                                    )}
                                 </div>
                               </div>
                               {/* <div className="w-full space-y-4">
@@ -1611,13 +1613,13 @@ const JobCardPage = () => {
                                   </div>
                                   {errors?.insuranceDetails
                                     ?.insuranceExpiryDate && (
-                                    <div className="text-destructive mt-2">
-                                      {
-                                        errors?.insuranceDetails
-                                          ?.insuranceExpiryDate.message
-                                      }
-                                    </div>
-                                  )}
+                                      <div className="text-destructive mt-2">
+                                        {
+                                          errors?.insuranceDetails
+                                            ?.insuranceExpiryDate.message
+                                        }
+                                      </div>
+                                    )}
                                 </div>
                               </div>
                             </div>
@@ -1897,25 +1899,24 @@ const JobCardPage = () => {
                                     )}
                                     {jobcardData?.documents?.beforePhotos
                                       ?.length > 0 && (
-                                      <div className="mt-2 grid grid-cols-3 gap-2">
-                                        {jobcardData?.documents?.beforePhotos?.map(
-                                          (photo, index) => (
-                                            <div
-                                              key={index}
-                                              className="relative"
-                                            >
-                                              <img
-                                                src={photo}
-                                                alt={`File Preview ${
-                                                  index + 1
-                                                }`}
-                                                className="w-32 h-32 object-cover"
-                                              />
-                                            </div>
-                                          )
-                                        )}
-                                      </div>
-                                    )}
+                                        <div className="mt-2 grid grid-cols-3 gap-2">
+                                          {jobcardData?.documents?.beforePhotos?.map(
+                                            (photo, index) => (
+                                              <div
+                                                key={index}
+                                                className="relative"
+                                              >
+                                                <img
+                                                  src={photo}
+                                                  alt={`File Preview ${index + 1
+                                                    }`}
+                                                  className="w-32 h-32 object-cover"
+                                                />
+                                              </div>
+                                            )
+                                          )}
+                                        </div>
+                                      )}
 
                                     {filePreviews1?.length > 0 && (
                                       <div className="mt-2 grid grid-cols-3 gap-2">
@@ -1927,9 +1928,8 @@ const JobCardPage = () => {
                                             >
                                               <img
                                                 src={preview}
-                                                alt={`File Preview ${
-                                                  index + 1
-                                                }`}
+                                                alt={`File Preview ${index + 1
+                                                  }`}
                                                 className="w-32 h-32 object-cover"
                                               />
                                               <button

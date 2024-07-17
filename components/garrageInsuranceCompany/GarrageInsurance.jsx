@@ -1,7 +1,7 @@
 "use client";
 import {
-    deleteInsurance,
-    getGarrageInsuranceCompanies
+  deleteInsurance,
+  getGarrageInsuranceCompanies
 } from "@/action/companyAction/insurance-action";
 import BasicDataTable from "@/components/common/data-table/basic-table";
 import DialogPlacement from "@/components/common/dialog/dialog-placement";
@@ -149,7 +149,7 @@ const GarrageInsurance = () => {
   ];
 
   const handleInsuranceEdit = (insuranceId) => {
-    router.push(`/insurance-list/add_insurance/${insuranceId}`);
+    router.push(`/insurance-list/edit_insurance/${insuranceId}`);
   };
 
   const handleInsuranceView = (insuranceId) => {

@@ -257,7 +257,7 @@ const QuotationsList = () => {
         const statusBtn = row?.original?.status;
         const isLatestQuotation = row?.original?.isLatestQuotation;
         const designation = userData?.data?.userId?.designation;
-        const isEditable = userData.data.userId.designation == "Surveyor" || userData.data.userId.role == "company"
+        const isEditable = userData?.data?.userId?.designation == "Surveyor" || userData.data.userId.role == "company"
         return (
           <div className="flex gap-3 items-center justify-center">
             {designation === "CSR" ? (

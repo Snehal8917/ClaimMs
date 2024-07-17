@@ -11,28 +11,38 @@ const WelcomeBlock = ({ data, session }) => {
       role: ["superAdmin", "employee", "company"],
     },
     {
-      title: "Total Approved Jobcards",
-      total: data?.data?.totalApprovedJobcards || 0,
+      title: "Total Drafts Jobcards",
+      total: data?.data?.totalDraftJobcards || 0,
       role: ["superAdmin", "employee", "company"],
     },
     {
-      title: "Total In-Progress Jobcards",
+      title: "Total In Progress Jobcards",
       total: data?.data?.totalInprogressJobcards || 0,
       role: ["superAdmin", "employee", "company"],
     },
     {
-      title: "Total Pending Jobcards",
-      total: data?.data?.totalPaidJobcards || 0,
+      title: "Total Completed Jobcards",
+      total: data?.data?.totalCompletedJobcards || 0,
       role: ["superAdmin", "employee", "company"],
     },
     {
       title: "Total Paid Jobcards",
-      total: data?.data?.totalPendingJobcards || 0,
+      total: data?.data?.totalPaidJobcards || 0,
       role: ["superAdmin", "employee", "company"],
     },
     {
       title: "Total Unpaid Jobcards",
       total: data?.data?.totalUnpaidJobcards || 0,
+      role: ["superAdmin", "employee", "company"],
+    },
+    {
+      title: "Total Re-Assigned Jobcards",
+      total: data?.data?.totalReAssignJobcards || 0,
+      role: ["superAdmin", "employee", "company"],
+    },
+    {
+      title: "Total Done Jobcards",
+      total: data?.data?.totalDoneJobcards || 0,
       role: ["superAdmin", "employee", "company"],
     },
     {

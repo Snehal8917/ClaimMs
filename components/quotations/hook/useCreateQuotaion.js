@@ -78,7 +78,7 @@ export const useCreateQuotaion = ({ CsrList }) => {
       const formData = new FormData();
       formData.append("quotatioDetails", JSON.stringify(data));
       if (lpoStep) {
-        console.log(lpoStep);
+
         formData.append("lpo", lpoStep[0]);
       }
       const quotaionsId = params?.quotaionsId;
@@ -221,14 +221,18 @@ export const useCreateQuotaion = ({ CsrList }) => {
         quJobCard: quotationData?.jobCardId?._id || "",
         qudaystocomplete: quotationData?.daysToQuote || "",
         quCustomerCareRepresentative: quotationData?.CCRId || "",
-        itemList: quotationData?.listOfItems || [
+
+        itemList: quotationData?.listOfItems?.length > 0 ? quotationData?.listOfItems : [
           { itemName: "", itemPrice: "" },
         ],
         quStatus: quotationData?.status || "Draft",
         quoLpo: quotationData?.lpo || [],
         sectionItems: quotationData?.sectionItemList?.length > 0 ?
           quotationData.sectionItemList :
-          [{ itemslist: [{ itemName: "" }], price: "" }]
+          [{
+            sectionName: "",
+            itemslist: [{ itemName: "" }], price: ""
+          }]
       };
     }
     else if (quotaionsId && quotationData) {
@@ -241,17 +245,17 @@ export const useCreateQuotaion = ({ CsrList }) => {
         // quJobCard: quotationData?.jobCardId?.jobCardNumber,
         qudaystocomplete: quotationData?.daysToQuote || "",
         quCustomerCareRepresentative: quotationData?.CCRId || "",
-        itemList: quotationData?.listOfItems || [
+        itemList: quotationData?.listOfItems?.length > 0 ? quotationData?.listOfItems : [
           { itemName: "", itemPrice: "" },
         ],
         quStatus: quotationData?.status || "Draft",
         quoLpo: quotationData?.lpo || [],
-        sectionItems: quotationData?.sectionItemList || [
-          {
-            itemslist: [{ itemName: "" }],
-            price: "",
-          },
-        ],
+        sectionItems: quotationData?.sectionItemList?.length > 0 ?
+          quotationData.sectionItemList :
+          [{
+            sectionName: "",
+            itemslist: [{ itemName: "" }], price: ""
+          }]
       };
     } else if (supplementId && quotationData) {
       return {
@@ -259,13 +263,14 @@ export const useCreateQuotaion = ({ CsrList }) => {
         quCustomer: quotationData?.customer?._id || "",
         quCar: quotationData?.car?._id || "",
         quInsuranceCom: quotationData?.insuranceCompany?._id || "",
-        
+
         quJobCard: quotationData?.jobCardId?._id || "",
         qudaystocomplete: quotationData?.daysToQuote || "",
         quCustomerCareRepresentative: quotationData?.CCRId || "",
         itemList: [{ itemName: "", itemPrice: "" }],
         sectionItems: [
           {
+            sectionName: "",
             itemsList: [{ itemName: "" }],
             price: "",
           },
@@ -282,17 +287,18 @@ export const useCreateQuotaion = ({ CsrList }) => {
         quJobCard: quotationData?.jobCardId?._id || "",
         qudaystocomplete: quotationData?.daysToQuote || "",
         quCustomerCareRepresentative: quotationData?.CCRId || "",
-        itemList: quotationData?.listOfItems || [
+
+        itemList: quotationData?.listOfItems?.length > 0 ? quotationData?.listOfItems : [
           { itemName: "", itemPrice: "" },
         ],
         quStatus: "Pending",
         quoLpo: quotationData?.lpo || [],
-        sectionItems: quotationData?.sectionItemList || [
-          {
-            itemsList: [{ itemName: "" }],
-            price: "",
-          },
-        ],
+        sectionItems: quotationData?.sectionItemList?.length > 0 ?
+          quotationData.sectionItemList :
+          [{
+            sectionName: "",
+            itemslist: [{ itemName: "" }], price: ""
+          }]
       };
     } else if (viewQuotationId && quotationData) {
       return {
@@ -303,15 +309,18 @@ export const useCreateQuotaion = ({ CsrList }) => {
         quJobCard: quotationData?.jobCardId?._id || "",
         qudaystocomplete: quotationData?.daysToQuote || "",
         quCustomerCareRepresentative: quotationData?.CCRId || "",
-        itemList: quotationData?.listOfItems || [
+
+
+        itemList: quotationData?.listOfItems?.length > 0 ? quotationData?.listOfItems : [
           { itemName: "", itemPrice: "" },
         ],
-        sectionItems: quotationData?.sectionItemList || [
-          {
-            itemsList: [{ itemName: "" }],
-            price: "",
-          },
-        ],
+
+        sectionItems: quotationData?.sectionItemList?.length > 0 ?
+          quotationData.sectionItemList :
+          [{
+            sectionName: "",
+            itemslist: [{ itemName: "" }], price: ""
+          }],
         quStatus: quotationData?.status || "Draft",
         quoLpo: quotationData?.lpo || [],
       };
@@ -327,6 +336,7 @@ export const useCreateQuotaion = ({ CsrList }) => {
         itemList: [{ itemName: "", itemPrice: "" }],
         sectionItems: [
           {
+            sectionName: "",
             itemsList: [{ itemName: "" }],
             price: "",
           },
@@ -344,6 +354,7 @@ export const useCreateQuotaion = ({ CsrList }) => {
         itemList: [{ itemName: "", itemPrice: "" }],
         sectionItems: [
           {
+            sectionName: "",
             itemsList: [{ itemName: "" }],
             price: "",
           },

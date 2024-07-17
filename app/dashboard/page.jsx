@@ -239,7 +239,7 @@ const ProjectPageView = ({ trans }) => {
               <CardTitle>Repair</CardTitle>
             </CardHeader>
             <CardContent className="px-0 pb-8">
-              <TopBrowserChart />
+              <TopBrowserChart dashboardData={dashboardData}/>
             </CardContent>
           </Card>
         </div>

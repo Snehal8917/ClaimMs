@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useSidebar, useThemeStore } from "@/store";
 import ProfileInfo from "./profile-info";
@@ -10,11 +10,19 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import MobileMenuHandler from "./mobile-menu-handler";
 import ClassicHeader from "./layout/classic-header";
 import NotificationMessage from "./notification-message";
-
+import { SocketContext } from "@/components/scoket/SocketConnection";
+import { toast as reToast } from "react-hot-toast";
+import { Button } from "@/components/ui/button";
 const NavTools = ({ isDesktop, isMobile, sidebarType }) => {
+
+
+  const { socket } = useContext(SocketContext);
+
+
+
   return (
     <div className="nav-tools flex items-center  gap-2">
-       <NotificationMessage />
+      <NotificationMessage />
       <div className="ltr:pl-2 rtl:pr-2">
         <ProfileInfo />
       </div>
@@ -79,7 +87,7 @@ const Header = ({ handleOpenSearch, trans }) => {
             <div className="flex justify-between items-center h-full">
               <VerticalHeader
                 sidebarType={sidebarType}
-                // handleOpenSearch={handleOpenSearch}
+              // handleOpenSearch={handleOpenSearch}
               />
               <NavTools
                 isDesktop={isDesktop}

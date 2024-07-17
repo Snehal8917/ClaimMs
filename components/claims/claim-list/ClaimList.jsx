@@ -293,7 +293,7 @@ const ClaimList = () => {
           e.stopPropagation();
         };
 
-        const addQuotattionRole = userData.data.userId.designation == "Surveyor" || userData.data.userId.role == "company"
+        const addQuotattionRole = userData?.data?.userId?.designation == "Surveyor" || userData?.data?.userId?.role == "company"
         console.log(addQuotattionRole,"addQuotattionRole");
 
         return (

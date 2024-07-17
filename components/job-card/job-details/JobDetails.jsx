@@ -45,10 +45,10 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
     (role === "company" ||
       (role === "employee" &&
         ((designation === "Technician" &&
-          (initialStatus === "In-Progress" || initialStatus === "Re-Assigned")) ||
+          (initialStatus === "In Progress" || initialStatus === "Re-Assigned")) ||
           (designation === "Surveyor" &&
             initialStatus === "Completed"))));
-  const isStatusEditable = ["In-Progress","Approved", "Completed", "Re-Assigned"].includes(
+  const isStatusEditable = ["In Progress","Approved", "Completed", "Re-Assigned"].includes(
     initialStatus
   );
   // const isStatusEditable = initialStatus !== "Done";
@@ -171,8 +171,8 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
       label: "Pending",
     },
     {
-      value: "In-Progress",
-      label: "In-Progress",
+      value: "In Progress",
+      label: "In Progress",
     },
     {
       value: "Unpaid",

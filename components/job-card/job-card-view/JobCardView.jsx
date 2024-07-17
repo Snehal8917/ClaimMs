@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import CustomerView from "../customer-view/CustomerView";
 import ClaimView from "../claim-view/ClaimView";
 import QuotionView from "../quotation-view/QuotionView";
+import AdditionalQuotionView from "../additional-quotation-view/AdditionalQuotionView";
 import DocuementView from "../docuemnt-view/DocuementView";
 import HistoryView from "../history-view/HistoryView";
 import { getSingleJobCardAction } from "@/action/employeeAction/jobcard-action";
@@ -21,6 +22,8 @@ const JobCardView = () => {
         return <ClaimView />;
       case "QuotationView":
         return <QuotionView />;
+      case "AdditionalQuotionView":
+        return <AdditionalQuotionView />;
       case "DocuementView":
         return <DocuementView />;
       case "HistoryView":
@@ -65,7 +68,7 @@ const JobCardView = () => {
             </div>
           </div>
         </div>
-        <div className="flex space-x-4 bg-muted p-2 rounded-lg w-[36rem] bg-[#6478B]">
+        <div className="flex space-x-4 bg-muted p-2 rounded-lg w-auto bg-[#6478B]">
           <button
             className={`px-4 py-2 rounded-lg hover:bg-muted/80 ${
               activeTab === "Customer"
@@ -95,6 +98,16 @@ const JobCardView = () => {
             onClick={() => setActiveTab("QuotationView")}
           >
             Quotation
+          </button>
+          <button
+            className={`px-4 py-2 rounded-lg hover:bg-muted/80 ${
+              activeTab === "AdditionalQuotionView"
+                ? "bg-card text-card-foreground font-bold"
+                : "text-muted-foreground"
+            }`}
+            onClick={() => setActiveTab("AdditionalQuotionView")}
+          >
+            Additional Quotation
           </button>
           <button
             className={`px-4 py-2 rounded-lg hover:bg-muted/80 ${

@@ -38,6 +38,8 @@ const ProfileInfo = () => {
   });
 
   const companyName = userData?.data?.userId?.companyName;
+  const avatar = userData?.data?.userId?.avatar;
+  const userEmail = userData?.data?.userId?.email;
 
   console.log("userData", companyName);
 
@@ -45,7 +47,7 @@ const ProfileInfo = () => {
     if (status === "authenticated" && session) {
       switch (session.role) {
         case "superAdmin":
-          return "/user-profile";
+          return "/company-profile";
         case "company":
           return "/company-profile";
         case "employee":
@@ -104,8 +106,8 @@ const ProfileInfo = () => {
         <div className=" flex items-center  ">
           {session?.userAvatar ? (
             <Image
-              src={session?.userAvatar}
-              alt={session?.userAvatar ?? ""}
+              src={avatar}
+              alt={avatar ?? ""}
               width={40}
               height={40}
               className="rounded-full"
@@ -155,7 +157,7 @@ const ProfileInfo = () => {
               href=""
               className="text-xs text-default-600 hover:text-primary"
             >
-              {session?.userEmail ?? "-"}
+              {userEmail ?? "-"}
             </Link>
           </div>
         </DropdownMenuLabel>

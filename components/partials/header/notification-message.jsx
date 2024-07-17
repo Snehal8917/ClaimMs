@@ -1,3 +1,5 @@
+"use client";
+import React, { useContext, useEffect, useState } from "react";
 import { Bell } from "@/components/svg";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,19 +18,91 @@ import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import { getNotificationAction } from "../../../action/notificationAction/notification-action";
 import { useQuery } from "@tanstack/react-query";
+import { SocketContext } from "../../scoket/SocketConnection";
+
+import { toast as reToast } from "react-hot-toast";
 
 const NotificationMessage = () => {
   const { data: session } = useSession();
 
+  const { socket } = useContext(SocketContext);
   const {
     data: notificationData,
     error: notificationError,
     isLoading: notiLoading,
+    refetch,
   } = useQuery({
     queryKey: ["NotificationData"],
     queryFn: () => getNotificationAction(session.jwt),
     enabled: !!session?.jwt, // Only run the query if the token is available
   });
+
+
+  //
+
+
+  const [isNotificationReceived, setIsNotificationReceived] = useState(false);
+
+
+  const customJsx = (messageInfo) => {
+    reToast((t) => (
+      <span className="space-x-4 w-full flex">
+        {messageInfo}
+        <Button
+          size="sm"
+          color="destructive"
+          onClick={() => reToast.dismiss(t.id)}
+        >
+          Dismiss
+        </Button>
+      </span>
+    ), { duration: 5000 });
+  };
+
+
+  useEffect(() => {
+    const handleNotification = (data) => {
+
+      const audio = new Audio("/sound/notify-sound.mp3");
+      audio.play();
+      customJsx(data?.message);
+      refetch();
+      setIsNotificationReceived(true);
+      setTimeout(() => setIsNotificationReceived(false), 9000);
+
+    };
+
+    socket.on("notification", handleNotification);
+
+    return () => {
+      socket.off("notification", handleNotification);
+    };
+  }, [socket]);
+
+  //
+
+  const handleReadAllNotification = () => {
+
+    socket.emit("notification:read-all", {}, (data) => {
+      console.log("read all noti :-", data)
+    });
+    refetch();
+
+  }
+
+
+  const handleReadNotification = (notificationId) => {
+
+    console.log(notificationId);
+
+
+    socket.emit("notification:read", {
+      notificationIds: [notificationId]
+    }, (data) => {
+      console.log("read one noti :-", data)
+    });
+    refetch();
+  }
 
   const timeAgo = (timestamp) => {
     const currentTime = new Date();
@@ -45,18 +119,22 @@ const NotificationMessage = () => {
     return "Just now";
   };
 
+  const totalNotificationUnRead = notificationData?.data?.filter(item => !item?.read)?.length;
+
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
-          className="relative md:h-9 md:w-9 h-8 w-8 transition-transform duration-300 hover:scale-110 hover:bg-default-100 dark:hover:bg-default-200 data-[state=open]:bg-default-100 dark:data-[state=open]:bg-default-200 hover:text-primary text-default-500 dark:text-default-800 rounded-full"
+          className={`${isNotificationReceived ? "animate-bounce" : "relative md:h-9 md:w-9 h-8 w-8 transition-transform duration-300 hover:scale-110 hover:bg-default-100 dark:hover:bg-default-200 data-[state=open]:bg-default-100 dark:data-[state=open]:bg-default-200 hover:text-primary text-default-500 dark:text-default-800 rounded-full"}`}
+
         >
-          <Bell className="h-5 w-5" />
-          {notificationData?.data?.length > 0 && (
+          <Bell className={`${isNotificationReceived ? "text-red-600 h-8 w-8" : "h-5 w-5 "}`} />
+          {totalNotificationUnRead > 0 && (
             <Badge className="w-4 h-4 p-0 text-xs font-medium items-center justify-center absolute left-[calc(100%-18px)] bottom-[calc(100%-16px)] ring-2 ring-primary-foreground">
-              {notificationData?.data?.length}
+              {totalNotificationUnRead}
             </Badge>
           )}
         </Button>
@@ -66,15 +144,25 @@ const NotificationMessage = () => {
           <span className="text-base font-semibold text-white flex-1">
             Notification
           </span>
-          <span className="text-xs font-medium text-white flex-0 cursor-pointer hover:underline hover:decoration-default-100 dark:decoration-default-900">
-            Mark all as read{" "}
+          <span onClick={() => {
+            handleReadAllNotification()
+          }} className="text-xs font-medium text-white flex-0 cursor-pointer hover:underline hover:decoration-default-100 dark:decoration-default-900">
+            Mark all as read
           </span>
         </DropdownMenuLabel>
         <div className="h-[300px] xl:h-[350px]">
           <ScrollArea className="h-full">
+          {notiLoading && <p>Loading notifications...</p>}
+            {notificationError && <p>Error loading notifications.</p>}
+            {notificationData?.data.length === 0 && (
+              <p className="flex justify-center items-center mt-10 font-bold">
+                No notifications
+              </p>
+            )}
             {notificationData?.data.map((item, index) => (
               <DropdownMenuItem
                 key={`inbox-${index}`}
+                onClick={() => handleReadNotification(item._id)}
                 className="flex gap-9 py-2 px-4 cursor-pointer transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <div className="flex-1 flex items-center gap-2">

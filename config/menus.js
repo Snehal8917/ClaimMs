@@ -41,11 +41,37 @@ export const menusConfig = {
         href: "/car-list",
         role: ["company", "employee"],
       },
+      // {
+      //   title: "Job Cards",
+      //   icon: ClipBoard,
+      //   href: "/jobcard-list",
+      //   role: ["company", "employee"],
+      // },
       {
         title: "Job Cards",
         icon: ClipBoard,
         href: "/jobcard-list",
         role: ["company", "employee"],
+        child: [
+          {
+            title: "All Jobcards",
+            href: "/jobcard-list",
+            icon: ClipBoard,
+            role: ["company", "employee"],
+          },
+          {
+            title: "In Progress Jobcards",
+            href: "/inprogress-jobcard",
+            icon: ClipBoard,
+            role: ["company", "employee"],
+          },
+          {
+            title: "Completed Jobcards",
+            href: "/completed-jobcard",
+            icon: ClipBoard,
+            role: ["company", "employee"],
+          },
+        ],
       },
       {
         title: "Claims",

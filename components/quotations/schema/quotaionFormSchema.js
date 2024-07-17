@@ -100,6 +100,9 @@ export const quotationFormSchemaSection = z.object({
 
   sectionItems: z.array(
     z.object({
+      sectionName: z.string().refine((value) => value.trim() !== "", {
+        message: " name required",
+      }),
       itemsList: z.array(
         z.object({
           itemName: z.string().refine((value) => value.trim() !== "", {

@@ -9,6 +9,7 @@ import TanstackProvider from "@/provider/providers.client";
 import AuthProvider from "@/provider/auth.provider";
 import "flatpickr/dist/themes/light.css";
 import DirectionProvider from "@/provider/direction.provider";
+import SocketProvider from "../components/scoket/SocketConnection";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
@@ -25,7 +26,9 @@ export default function RootLayout({ children, params: { lang } }) {
       <AuthProvider>
         <Providers>
           <TanstackProvider>
-            <DirectionProvider lang={lang}>{children}</DirectionProvider>
+            <SocketProvider>
+              <DirectionProvider lang={lang}>{children}</DirectionProvider>
+            </SocketProvider>
           </TanstackProvider>
         </Providers>
       </AuthProvider>

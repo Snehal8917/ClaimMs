@@ -54,6 +54,7 @@ const JobCardListPage = () => {
   const [tableLoading, setTableLoading] = useState(false);
   const [componentLoading, setComponentLoading] = useState(true);
   const [status, setStatus] = useState("");
+  const [statusCall, setStatusCall] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
@@ -61,7 +62,18 @@ const JobCardListPage = () => {
 
   const isEmployee = role === "employee";
   const isCompany = role === "company";
-
+  useEffect(() => {
+    const currentPath = window.location.href;
+      // console.log(currentPath,"currentPath");
+      if (currentPath.includes("/inprogress-jobcard")) {
+        console.log("currentPath",currentPath);
+        setStatus("In Progress");
+      } else if (currentPath.includes("/completed-jobcard")) {
+        setStatus("completed");
+      } else {
+        setStatus("");
+      }
+  }, []);
 
   // useEffect(() => {
   //   if (router.isReady) {
@@ -364,7 +376,7 @@ const JobCardListPage = () => {
   };
 
   const { data, error, refetch } = useQuery({
-    queryKey: ["GetJobCardsList", pageIndex, pageSize],
+    queryKey: ["GetJobCardsList", pageIndex, pageSize, status],
     queryFn: async () => {
       setTableLoading(true);
       return getJobCardListAction({

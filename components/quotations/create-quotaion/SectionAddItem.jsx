@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Controller, useFieldArray } from "react-hook-form";
+import { Controller, useFieldArray, useWatch } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { FiPlus } from "react-icons/fi";
 import { Label } from "@/components/ui/label";
@@ -27,10 +27,10 @@ const SectionAddItem = ({
   const viewQuotationId = params?.viewQuotationId;
   const reCreateID = params?.reCreateID;
 
-  const isFirstRun = useRef(false); // u
+  const isFirstRun = useRef(false);
 
   const handleAddItem = () => {
-    append({ itemName: "" }); // Append a new item to the itemslist
+    append({ itemName: "" });
   };
 
   const handleRemoveItem = (itemIndex) => {
@@ -46,20 +46,84 @@ const SectionAddItem = ({
     }
   }, [fields, handleAddItem]);
 
+
+  //
+
+  const sectionName = useWatch({
+    control,
+    name: `sectionItems[${index}].sectionName`
+  });
+
+  const itemsList = useWatch({
+    control,
+    name: `sectionItems[${index}].itemsList`
+  });
+
+  const price = useWatch({
+    control,
+    name: `sectionItems[${index}].price`
+  });
+
+  const allFieldsFilled =
+    sectionName?.trim() !== "" &&
+    price?.trim() !== "" &&
+    itemsList.every(item => item.itemName.trim() !== "");
+
+  useEffect(() => {
+    if (!isFirstRun.current && fields.length === 0) {
+      handleAddItem();
+      isFirstRun.current = true;
+    }
+  }, [fields, handleAddItem]);
+
+
+  //
+
+
   return (
     <>
       <div className="w-full flex flex-wrap justify-between gap-4">
         <div className="w-full lg:w-full space-y-4">
           <Card className="border">
             <CardHeader className="flex flex-row items-center  justify-between gap-3 font-bold">
-              <Label>Section {index + 1}</Label>
+              {/* <Label>Section {index + 1}</Label> */}
+              <div>
+                <Controller
+                  control={control}
+                  name={`sectionItems[${index}].sectionName`}
+                  render={({ field }) => (
+                    <Input
+                      type="text"
+                      placeholder="section name"
+                      size="lg"
+                      {...field}
+                      className=""
+                      readOnly={
+                        (quotaionsId && quotationData?.status === 'Draft') ? false :
+                          (quotaionsId && quotationData?.status !== 'Draft') ? true :
+                            (viewQuotationId) ? true :
+                              false
+                      }
+                    />
+                  )}
+                />
+                {errors?.sectionItems?.[index]?.sectionName && (
+                  <span className="text-red-700 ml-2 font-normal">
+                    {
+                      errors.sectionItems?.[index]?.sectionName?.message
+                    }
+                  </span>
+                )}
+
+              </div>
+
 
 
               {viewQuotationId ? (
                 <></>
               ) : (
                 quotaionsId && quotationData?.status !== 'Draft' ? (
-                  <></> // If quotaionsId is present but quotationData.status is not 'Draft', render nothing
+                  <></>
                 ) : (
                   <>
                     {index === sectionlitsFields.length - 1 ? (
@@ -86,7 +150,9 @@ const SectionAddItem = ({
                             variant="outline"
                             type="button"
                             title="Add Item"
+                            disabled={!allFieldsFilled}
                             onClick={() => handleAddSection()}
+
                           >
                             <FiPlus className="w-5 h-5 text-default-300" />
                           </Button>
@@ -110,8 +176,6 @@ const SectionAddItem = ({
                   </>
                 )
               )}
-
-
 
             </CardHeader>
             <CardContent className="flex flex-wrap gap-4 justify-between w-full">
@@ -159,7 +223,7 @@ const SectionAddItem = ({
                           <></>
                         ) : (
                           quotaionsId && quotationData?.status !== 'Draft' ? (
-                            <></> // If quotaionsId is present but quotationData.status is not 'Draft', render nothing
+                            <></>
                           ) : (
                             <>
                               {" "}
@@ -213,11 +277,6 @@ const SectionAddItem = ({
                             </>
                           )
                         )}
-
-
-
-
-
                       </div>
                     ))}
                   </div>
@@ -244,26 +303,14 @@ const SectionAddItem = ({
                             />
                           )}
                         />
-                        {errors?.sectionItems?.[index]?.itemsList?.[itemIndex]
-                            ?.price && (
-                              <span className="text-red-700 ml-2">
-                                {
-                                  errors.sectionItems[index].itemsList[itemIndex]
-                                    .price.message
-                                }
-                              </span>
-                            )}
+                        {errors?.sectionItems?.[index]?.price && (
+                          <span className="text-red-700 ml-2">
+                            {
+                              errors.sectionItems?.[index]?.price?.message
+                            }
+                          </span>
+                        )}
                       </div>
-
-                      {/* {errors?.sectionlits?.[index]?.itemslist?.[itemIndex]
-                        ?.itemName && (
-                        <span className="text-red-700">
-                          {
-                            errors.sectionlits[index].itemslist[itemIndex]
-                              .itemName.message
-                          }
-                        </span>
-                      )} */}
                     </div>
                   </div>
                 </div>
