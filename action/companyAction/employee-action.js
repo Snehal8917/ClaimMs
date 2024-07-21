@@ -20,7 +20,8 @@ export const getSingleEmployeeAction = async (id) => {
 };
 
 export const updateEmployee = async (id, updatedFields) => {
-    await updateEmployeeById(id, updatedFields);
+    const response = await updateEmployeeById(id, updatedFields);
+    return response;
 };
 
 ///CSR Employee

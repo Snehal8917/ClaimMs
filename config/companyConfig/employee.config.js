@@ -44,6 +44,7 @@ export const updateEmployeeById = async (id, updatedFields) => {
             `/api/company/edit-employee/${id}`,
             updatedFields
         );
+        console.log("Updated employee:-", response?.data);
         return response.data;
     } catch (error) {
         throw error;

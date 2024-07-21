@@ -8,6 +8,7 @@ import FileUploaderSingle from "@/components/common/file-uploader/file-uploader-
 import { toTitleCase } from "@/components/common/utitlity/helper";
 import { BreadcrumbItem, Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
+import PasswordChangeModel from "./PasswordChangeModel";
 import {
   Card,
   CardContent,
@@ -77,6 +78,12 @@ const EmployeePage = () => {
   const [allSelected, setAllSelected] = useState(false); // Add this state
   const router = useRouter();
   const { create_employee } = useParams();
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+
+  const handlePasswordModalOpen = () => setIsPasswordModalOpen(true);
+  const handlePasswordModalClose = () => setIsPasswordModalOpen(false);
+
+  const [isPasswordUpdate, setIsPasswordUpdate] = useState(false);
 
   const employeeId = create_employee && create_employee[0];
 
@@ -203,8 +210,14 @@ const EmployeePage = () => {
       return await updateEmployee(employeeId, formData);
     },
     onSuccess: (response) => {
+      console.log(response,"responseresponse");
       toast.success(response?.message || "Employee updated successfully");
-      router.push("/employee-list");
+      if (isPasswordUpdate) {
+        handlePasswordModalClose();
+        setIsPasswordUpdate(false);
+      } else {
+        router.push("/employee-list");
+      }
     },
     onError: (error) => {
       toast.error(
@@ -274,6 +287,19 @@ const EmployeePage = () => {
     const { value } = event.target;
     setValue(fieldName, toTitleCase(value));
   };
+ 
+  const handlePasswordUpdate = (data) => {
+    setIsPasswordUpdate(true);
+    // Call your update mutation here
+    updatePostMutation.mutate(data, {
+      onSuccess: () => {
+        handlePasswordModalClose();
+      },
+      onError: (error) => {
+        // Handle error
+      },
+    });
+  };
 
   return (
     <>
@@ -296,7 +322,7 @@ const EmployeePage = () => {
                     {create_employee ? "Update Employee" : "Create Employee"}
                   </div>
                   <div className="flex items-center justify-between sm:w-auto gap-2">
-                    <Button
+                    {/* <Button
                       className="border-default-300 group"
                       size="icon"
                       variant="outline"
@@ -308,7 +334,19 @@ const EmployeePage = () => {
                         icon="heroicons:arrow-path"
                         className="w-5 h-5 text-default-300 group-hover:text-default-50 dark:group-hover:text-primary-foreground"
                       />
-                    </Button>
+                    </Button> */}
+                    {create_employee && (
+                      <>
+                        <Button
+                          className="border-default-300 group"
+                          type="button"
+                          title="Password Change"
+                          onClick={handlePasswordModalOpen}
+                        >
+                          Change Password
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -559,6 +597,12 @@ const EmployeePage = () => {
           </div>
         </div>
       </form>
+      {isPasswordModalOpen && (
+        <PasswordChangeModel
+          onClose={handlePasswordModalClose}
+          onSubmit={handlePasswordUpdate}
+        />
+      )}
     </>
   );
 };
