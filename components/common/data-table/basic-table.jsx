@@ -28,6 +28,7 @@ import {
 import Select from "react-select";
 import { DataTablePagination } from "./data-table-pagination";
 import TableSkeleton from './TableSkeleton'
+import { Checkbox } from "@/components/ui/checkbox";
 
 export function BasicDataTable({
   data,
@@ -54,6 +55,8 @@ export function BasicDataTable({
   hiddenFilter = false,
   handleViewClick,
   rowClickable = false,
+  showCheckbox  = false,
+  handleDeleteSelected= false,
 }) {
   const [sorting, setSorting] = React.useState([]);
   const [columnFilters, setColumnFilters] = React.useState([]);
@@ -61,6 +64,7 @@ export function BasicDataTable({
   const [rowSelection, setRowSelection] = React.useState({});
   const [dateRange, setDateRange] = React.useState({ from: "", to: "" });
   const [selectedRowId, setSelectedRowId] = React.useState(null);
+  const [selectedRows, setSelectedRows] = React.useState([]);
 
   const handleDateRangeChange = ({ from = null, to = null } = {}) => {
     if (from === null && to === null) {
@@ -125,10 +129,23 @@ export function BasicDataTable({
       handleViewClick(row.original._id);
     }
   };
+
+  const handleCheckboxChange = (row) => {
+    setSelectedRows((prev) =>
+      prev.includes(row.id)
+        ? prev.filter((id) => id !== row.id)
+        : [...prev, row.id]
+    );
+  };
+
+  const handleSelectAll = (checked) => {
+    setSelectedRows(checked ? table.getRowModel().rows.map((row) => row.id) : []);
+  };
+
   return (
     <>
       <div className="space-y-4">
-        <div className="flex items-center flex-wrap gap-2  px-4">
+        <div className="flex items-center flex-wrap gap-2 px-4">
           {!hiddenOnly && (
             <Input
               placeholder={`Filter ${filterPlaceHolder}...`}
@@ -150,13 +167,20 @@ export function BasicDataTable({
           {(isFiltered || dateRange?.from || dateRange?.to) && (
             <Button
               variant="outline"
-              // onClick={handleReset}
               onClick={resetFilters}
-              // className="h-8 px-2 lg:px-3"
               className="bg-red-500 hover:bg-red-700 text-white h-8 px-4 lg:px-3 font-bold border-none py-2 rounded"
             >
               Reset
               <X className="ltr:ml-2 rtl:mr-2 h-4 w-4" />
+            </Button>
+          )}
+          {showCheckbox && selectedRows.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => handleDeleteSelected(selectedRows)}
+              className="bg-red-500 hover:bg-red-700 text-white h-8 px-4 lg:px-3 font-bold border-none py-2 rounded"
+            >
+              Delete Selected
             </Button>
           )}
         </div>
@@ -165,42 +189,51 @@ export function BasicDataTable({
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
-                  {headerGroup?.headers?.map((header) => {
-                    return (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    );
-                  })}
+                  {showCheckbox && (
+                    <TableHead>
+                      <Checkbox
+                        checked={
+                          selectedRows.length === table.getRowModel().rows.length
+                        }
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
+                  )}
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  ))}
                 </TableRow>
               ))}
             </TableHeader>
             <TableBody>
-              {tableLoading ? ( // Display loading indicator when isLoading is true
-                // <TableRow>
-                //   <TableCell
-                //     colSpan={columns.length}
-                //     className="h-24 text-center"
-                //   >
-                //     Loading...
-                //   </TableCell>
-                // </TableRow>
+              {tableLoading ? (
                 <TableSkeleton columns={columns} />
-              ) : table.getRowModel().rows?.length ? (
+              ) : table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    onClick={() => handleRowClick(row)} // Handle row click
+                    onClick={() => handleRowClick(row)}
                     className={`${
                       rowClickable ? "cursor-pointer" : ""
-                    } hover:bg-blue-100`} // Apply hover background color
+                    } hover:bg-blue-100`}
                   >
+                    {showCheckbox && (
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedRows.includes(row.id)}
+                          onCheckedChange={() => handleCheckboxChange(row)}
+                          onClick={(e) => e.stopPropagation()} // Prevent triggering rowClickable
+                        />
+                      </TableCell>
+                    )}
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
                         {flexRender(
@@ -213,10 +246,7 @@ export function BasicDataTable({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell
-                    colSpan={columns?.length}
-                    className="h-24 text-center"
-                  >
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
                     No results.
                   </TableCell>
                 </TableRow>
@@ -224,7 +254,6 @@ export function BasicDataTable({
             </TableBody>
           </Table>
         </div>
-
         {!hiddenOnly && (
           <DataTablePagination
             table={table}

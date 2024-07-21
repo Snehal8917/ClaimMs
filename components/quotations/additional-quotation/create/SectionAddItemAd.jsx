@@ -23,7 +23,7 @@ const SectionAddItemAd = ({
     });
     const params = useParams();
 
-
+    const viewAdQuId = params?.viewAdQuId;
 
     const isFirstRun = useRef(false);
 
@@ -96,6 +96,7 @@ const SectionAddItemAd = ({
                                             size="lg"
                                             {...field}
                                             className=""
+                                            readOnly={viewAdQuId}
 
                                         />
                                     )}
@@ -111,8 +112,7 @@ const SectionAddItemAd = ({
                             </div>
 
 
-
-                            <>
+                            {viewAdQuId ? (<></>) : (<>
                                 {index === sectionlitsFields.length - 1 ? (
                                     <>
                                         <div className="flex justify-center items-center gap-2">
@@ -160,7 +160,8 @@ const SectionAddItemAd = ({
                                         />
                                     </Button>
                                 )}
-                            </>
+                            </>)}
+
 
                         </CardHeader>
                         <CardContent className="flex flex-wrap gap-4 justify-between w-full">
@@ -181,6 +182,7 @@ const SectionAddItemAd = ({
                                                                 size="lg"
                                                                 {...field}
                                                                 className=""
+                                                                readOnly={viewAdQuId}
 
                                                             />
                                                         )}
@@ -197,9 +199,7 @@ const SectionAddItemAd = ({
 
                                                 </div>
 
-
-
-                                                {itemIndex === fields.length - 1 ? (
+                                                {viewAdQuId ? (<></>) : (<>  {itemIndex === fields.length - 1 ? (
                                                     <>
                                                         <div className="flex justify-center items-center gap-2">
                                                             {itemIndex != 0 && (
@@ -245,7 +245,9 @@ const SectionAddItemAd = ({
                                                             className="w-5 h-5 text-default-300"
                                                         />
                                                     </Button>
-                                                )}
+                                                )}</>)}
+
+
                                             </div>
                                         ))}
                                     </div>
@@ -262,6 +264,7 @@ const SectionAddItemAd = ({
                                                             placeholder="total price"
                                                             size="lg"
                                                             {...field}
+                                                            readOnly={viewAdQuId}
 
                                                             className="w-1/3"
                                                         />

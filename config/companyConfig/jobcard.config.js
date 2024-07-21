@@ -20,13 +20,12 @@ export const getJobCardsList = async ({ page = 1, size = 10, all = false, search
     }
 }
 
-export const DeleteJobCard = async (id) => {
-    console.log(id, "delete JobCard")
+export const DeleteJobCard = async (ids) => {
     try {
-        const response = await AxiosCreator.delete(`/api/job-card/delete/${id}`);
+        const response = await AxiosCreator.post(`/api/job-card/delete`,ids);
         return response.data;
     } catch (error) {
-        return error.response.data;
+        return error?.response?.data;
     }
 }
 export const getJobCardById = async (id) => {

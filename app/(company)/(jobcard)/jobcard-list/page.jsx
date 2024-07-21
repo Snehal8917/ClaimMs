@@ -27,7 +27,7 @@ import { useSession } from "next-auth/react";
 import { getUserMeAction } from "@/action/auth-action";
 import {
   getJobCardListAction,
-  updateJobCardAction,
+  updateJobCardAction
 } from "@/action/employeeAction/jobcard-action";
 import { Badge } from "@/components/ui/badge";
 import { DeleteJobCard } from "@/config/companyConfig/jobcard.config";
@@ -64,15 +64,15 @@ const JobCardListPage = () => {
   const isCompany = role === "company";
   useEffect(() => {
     const currentPath = window.location.href;
-      // console.log(currentPath,"currentPath");
-      if (currentPath.includes("/inprogress-jobcard")) {
-        console.log("currentPath",currentPath);
-        setStatus("In Progress");
-      } else if (currentPath.includes("/completed-jobcard")) {
-        setStatus("completed");
-      } else {
-        setStatus("");
-      }
+    // console.log(currentPath,"currentPath");
+    if (currentPath.includes("/inprogress-jobcard")) {
+      console.log("currentPath", currentPath);
+      setStatus("In Progress");
+    } else if (currentPath.includes("/completed-jobcard")) {
+      setStatus("completed");
+    } else {
+      setStatus("");
+    }
   }, []);
 
   // useEffect(() => {
@@ -128,7 +128,6 @@ const JobCardListPage = () => {
   };
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }) => {
-      console.log(id, status, "updateStatusMutation");
       const formData = new FormData();
       formData.append("status", status ? status : "");
       return await updateJobCardAction(id, formData);
@@ -144,7 +143,6 @@ const JobCardListPage = () => {
 
   const handleStatusUpdate = (jobID, newStatus) => {
     updateStatusMutation.mutate({ id: jobID, status: newStatus });
-    console.log(jobID, newStatus, "handleStatusUpdate");
   };
   const columns = [
     {
@@ -257,7 +255,6 @@ const JobCardListPage = () => {
       id: "actions",
       enableHiding: false,
       cell: ({ row }) => {
-        // console.log(row, "row into actions");
         const jobCardId = row?.original?._id;
         const handleStopPropagation = (e) => {
           e.stopPropagation();
@@ -316,7 +313,7 @@ const JobCardListPage = () => {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={(e) => {
-                    handleDeleteClick(jobCardId);
+                    handleDeleteClick([jobCardId]);
                     handleStopPropagation(e);
                   }}
                   disabled={!canDeleteJobCard}
@@ -351,17 +348,25 @@ const JobCardListPage = () => {
   };
 
   const deleteMutation = useMutation({
-    mutationFn: DeleteJobCard,
     mutationKey: ["DeleteJobCard"],
+    mutationFn: async (data) => {
+      const ids = {
+        ids: data,
+      };
+
+      return await DeleteJobCard(ids);
+      // return await addEmiratesData(formData);
+    },
     onSuccess: (res) => {
       console.log(res, "res");
       toast.success(res?.message);
       setModalOpen(false);
       setselectJobCard(null);
-      queryClient.invalidateQueries({ queryKey: ["GetJobCardsList"] });
+      queryClient.invalidateQueries({ queryKey: ["GetJobCardsList"] }); // Invalidate query to update UI
     },
     onError: (error) => {
-      console.error("Error deleting employee:", error);
+      console.error("Error deleting job card:", error);
+      // Handle error if needed
     },
   });
 
@@ -373,6 +378,15 @@ const JobCardListPage = () => {
   const handleDeleteConfirm = () => {
     deleteMutation.mutate(selectJobCard);
     setModalOpen(false);
+  };
+  const handleDeleteSelected = (selectedRowIds) => {
+    const allIds = data.data.jobCards.map((jobCard) => jobCard._id);
+    const selectedIds = selectedRowIds.map((index) => allIds[index]);
+
+    handleDeleteClick(selectedIds);
+
+    // queryClient.setQueryData(["GetJobCardsList"], newData);
+    refetch();
   };
 
   const { data, error, refetch } = useQuery({
@@ -429,8 +443,6 @@ const JobCardListPage = () => {
     });
   };
 
-  // console.log(columns, "columns");
-
   return (
     <Fragment>
       <div className="flex justify-between">
@@ -483,6 +495,8 @@ const JobCardListPage = () => {
               hiddenFilter={true}
               handleViewClick={handleJobcardView}
               rowClickable
+              handleDeleteSelected={handleDeleteSelected}
+              showCheckbox={data?.data?.jobCards.length > 0 ? true : false}
             />
           </CardContent>
         </Card>

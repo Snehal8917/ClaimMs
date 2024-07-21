@@ -85,6 +85,20 @@ export const supplementQuotation = async (data) => {
     throw error;
   }
 };
+//up sp
+
+
+export const updateSpQuotationeById = async (id, updatedFields) => {
+  try {
+    const response = await AxiosCreator.put(
+      `/api/quotation/editSupplmentery/${id}`,
+      updatedFields
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
 
 
 ///ad qu
@@ -128,4 +142,17 @@ export const getAdQuotationAll = async ({
 };
 
 
+//update quo
 //
+
+export const updateAdQuotationeById = async (id, updatedFields) => {
+  try {
+    const response = await AxiosCreator.put(
+      `/api/additional-quote/edit/${id}`,
+      updatedFields
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

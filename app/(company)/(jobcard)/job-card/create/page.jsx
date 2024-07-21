@@ -83,6 +83,7 @@ const step1Schema = z.object({
   //   .refine((value) => {
   //     return /^\S+@\S+\.\S+$/.test(value);
   //   }, "Invalid email format"),
+
   email: z.string().optional(),
   mobileNumber: z
     .string()
@@ -122,6 +123,13 @@ const step1Schema = z.object({
   tcNo: z.string().refine((value) => value.trim() !== "", {
     message: "TC number is required",
   }),
+}).superRefine((data, ctx) => {
+  if (data.email && !/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(data.email)) {
+    ctx.addIssue({
+      path: ["email"],
+      message: "Invalid email format",
+    });
+  }
 });
 
 // Step 2 schema

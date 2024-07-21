@@ -6,14 +6,16 @@ import toast from "react-hot-toast";
 import { useParams, useRouter } from "next/navigation";
 
 import { getSingleJobCardAction } from "../../../../action/employeeAction/jobcard-action";
-import { addAdQuotation } from "@/action/quotationAction/quotation-action";
+import { addAdQuotation, getAdSingleQuotation,updateAdQuotation } from "@/action/quotationAction/quotation-action";
 
 export const useAdditionalQuotation = () => {
+    const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [snewtatus, setSnewtatus] = useState("");
     const params = useParams();
     const jobCardId = params?.jobcardId;
-
+    const viewAdQuId = params?.viewAdQuId;
+    const quotaionsId = params?.quotaionsId;
     const {
         isLoading: isLoadingJobCardData,
         isError: isErrorJobCardData,
@@ -31,6 +33,23 @@ export const useAdditionalQuotation = () => {
         dateString ? new Date(dateString).toISOString().split("T")[0] : "";
 
 
+
+
+    const {
+        isLoading,
+        isError,
+        data: quotationData,
+        error,
+    } = useQuery({
+        queryKey: ["QutationData", viewAdQuId],
+        queryFn: () => getAdSingleQuotation(viewAdQuId || quotaionsId),
+        enabled: !!viewAdQuId || !!quotaionsId,
+        retry: false,
+    });
+
+
+
+
     const addADQuotationMutation = useMutation({
         mutationKey: ["addADQuotationMutation"],
         mutationFn: async (data) => {
@@ -38,13 +57,32 @@ export const useAdditionalQuotation = () => {
         },
         onSuccess: (response) => {
             toast.success(response?.message);
+            router.back();
 
-            //   router.push("/quotations-list");
         },
         onError: (error) => {
             toast.error(error?.data?.message);
         },
     });
+
+
+
+    const updateAdQuotationMutation = useMutation({
+        mutationKey: ["updateAdQuotationMutation"],
+        mutationFn: async (data) => {
+
+            const quotaionsId = params?.quotaionsId;
+            return await updateAdQuotation(quotaionsId, data);
+        },
+        onSuccess: (response) => {
+            toast.success(response?.message);
+            router.back();
+        },
+        onError: (error) => {
+            toast.error(error?.data?.message);
+        },
+    });
+
 
 
     //addAdQuotation
@@ -88,26 +126,73 @@ export const useAdditionalQuotation = () => {
             sectionItemList: sectionItems,
         };
 
-        await addADQuotationMutation.mutateAsync(payLoad);
+
+        if (quotaionsId && quotationData?.status === "Draft") {
+            await updateAdQuotationMutation.mutateAsync(payLoad);
+        } else {
+            await addADQuotationMutation.mutateAsync(payLoad);
+        }
+
 
     };
 
 
-    const initialValues = useMemo(() => ({
-        quDateAndTime: formatDate(new Date()),
-        quCustomer: jobcardData?.customerId?._id || "",
-        quCar: jobcardData?.carId?._id || "",
-        quJobCard: jobcardData?._id || "",
-        qudaystocomplete: "",
-        itemList: [{ itemName: "", itemPrice: "" }],
-        sectionItems: [
-            {
-                sectionName: "",
-                itemsList: [{ itemName: "" }],
-                price: "",
-            },
-        ],
-    }), [jobcardData]);
+
+    console.log("quotationData?.status ", quotationData?.status);
+    const initialValues = useMemo(() => {
+        if (viewAdQuId && quotationData) {
+            return {
+                quDateAndTime: formatDate(quotationData?.date) || "",
+                quCustomer: quotationData?.customer?._id || "",
+                quCar: quotationData?.car?._id || "",
+
+                quJobCard: quotationData?.jobCardId?._id || "",
+                qudaystocomplete: quotationData?.daysToQuote || "",
+
+                itemList: quotationData?.listOfItems?.length > 0
+                    ? quotationData.listOfItems
+                    : [{ itemName: "", itemPrice: "" }],
+                sectionItems: quotationData?.sectionItemList?.length > 0
+                    ? quotationData.sectionItemList
+                    : [{ sectionName: "", itemsList: [{ itemName: "" }], price: "" }],
+                quStatus: quotationData?.status || "Draft",
+
+            };
+        } else if (quotaionsId && quotationData?.status === 'Draft') {
+            return {
+                quDateAndTime: formatDate(quotationData?.date) || "",
+                quCustomer: quotationData?.customer?._id || "",
+                quCar: quotationData?.car?._id || "",
+
+                quJobCard: quotationData?.jobCardId?._id || "",
+                qudaystocomplete: quotationData?.daysToQuote || "",
+
+
+                itemList: quotationData?.listOfItems?.length > 0 ? quotationData?.listOfItems : [
+                    { itemName: "", itemPrice: "" },
+                ],
+                quStatus: quotationData?.status || "Draft",
+
+                sectionItems: quotationData?.sectionItemList?.length > 0 ?
+                    quotationData.sectionItemList :
+                    [{
+                        sectionName: "",
+                        itemslist: [{ itemName: "" }], price: ""
+                    }]
+            };
+        } else {
+            return {
+                quDateAndTime: formatDate(new Date()),
+                quCustomer: jobcardData?.customerId?._id || "",
+                quCar: jobcardData?.carId?._id || "",
+                quJobCard: jobcardData?._id || "",
+                qudaystocomplete: "",
+                itemList: [{ itemName: "", itemPrice: "" }],
+                sectionItems: [{ sectionName: "", itemsList: [{ itemName: "" }], price: "" }],
+            };
+        }
+    }, [viewAdQuId, quotationData, jobcardData]);
+
 
 
     return {
@@ -115,6 +200,7 @@ export const useAdditionalQuotation = () => {
         schema: additionalQuotationSchema,
         submit: handleQuotationForm,
         setSnewtatus,
+        quotationData,
         loading,
     };
 };

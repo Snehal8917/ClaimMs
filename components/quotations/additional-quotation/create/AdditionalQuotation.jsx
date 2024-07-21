@@ -22,14 +22,16 @@ import { getCSREmployeeAction } from "@/action/companyAction/employee-action";
 import { getGarrageInsuranceCompanies } from "@/action/companyAction/insurance-action";
 import { getCustomerListAction } from "@/action/employeeAction/customer-action";
 import { getJobCardListAction } from "@/action/employeeAction/jobcard-action";
-import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { statusOptionsCSR, statusOptionsCompany } from "../../constants";
 import { useAdditionalQuotation } from "../hook/useAdditionalQuotation";
 import { FiPlus } from "react-icons/fi";
 import SectionAddItemAd from "./SectionAddItemAd";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { additionalQuotationFormSchemaSection } from "../schema/additionalQuotationSchema";
+import { updateAdQuotation } from "../../../../action/quotationAction/quotation-action";
+import toast from "react-hot-toast";
 const styles = {
     option: (provided, state) => ({
         ...provided,
@@ -40,10 +42,12 @@ const styles = {
 const AdditionalQuotation = () => {
     const [resetTrigger, setResetTrigger] = useState(false);
     const params = useParams();
+    const router = useRouter();
     const { data: session } = useSession();
 
-    const jobCardI1d = params?.jobcardId;
-
+    const jobCardId = params?.jobcardId;
+    const viewAdQuId = params?.viewAdQuId;
+    const quotaionsId = params?.quotaionsId;
     const [isSectionView, setIsSectionView] = useState(false);
     //
     const { data: getCSREmployeeData } = useQuery({
@@ -57,6 +61,15 @@ const AdditionalQuotation = () => {
     });
 
     //me api
+
+
+    const AllOptions = [
+        { label: "Approved", value: "Approved" },
+        { label: "Pending", value: "Pending" },
+        { label: "Declined", value: "Declined" },
+        { label: "Draft", value: "Draft" },
+        { label: "Completed", value: "Completed" },
+    ];
 
     const {
         data: userData,
@@ -75,8 +88,8 @@ const AdditionalQuotation = () => {
         })) ?? [];
     //
 
-    const { initialValues, schema, submit, setSnewtatus } = useAdditionalQuotation();
-
+    const { initialValues, schema, submit, setSnewtatus, quotationData } = useAdditionalQuotation();
+    const [isFocused, setIsFocused] = useState(false);
     const {
         register,
         handleSubmit,
@@ -89,7 +102,20 @@ const AdditionalQuotation = () => {
         resolver: zodResolver(isSectionView ? additionalQuotationFormSchemaSection : schema),
     });
 
-    console.log("errors :-", errors);
+    useEffect(() => {
+        if (quotationData) {
+            if (
+                quotationData?.listOfItems.length > 0 &&
+                quotationData?.sectionItemList?.length === 0
+            ) {
+                setIsSectionView(false);
+            } else if (quotationData?.sectionItemList?.length > 0) {
+                setIsSectionView(true);
+            } else {
+                setIsSectionView(false);
+            }
+        }
+    }, [quotationData]);
 
     useEffect(() => {
         reset(initialValues);
@@ -163,7 +189,7 @@ const AdditionalQuotation = () => {
         label: job.jobCardNumber,
     }));
 
-    const jobCardId = params?.jobcardId;
+
     ///
 
     //////////////////
@@ -206,6 +232,42 @@ const AdditionalQuotation = () => {
         }
     }, [sectionlitsFields, SectionApped]);
 
+
+    const updateAdQuotationMutation = useMutation({
+        mutationKey: ["updateAdQuotationMutation"],
+        mutationFn: async (data) => {
+
+            const quotaionsId = params?.quotaionsId;
+            const viewAdQuId = params?.viewAdQuId;
+            return await updateAdQuotation(viewAdQuId, data);
+        },
+        onSuccess: (response) => {
+            toast.success(response?.message);
+
+        },
+        onError: (error) => {
+            toast.error(error?.data?.message);
+        },
+    });
+
+
+
+    const handleStatusUpdate = (newStatus) => {
+        const payload = {
+            status: newStatus,
+        };
+
+        if (!jobCardId) {
+            updateAdQuotationMutation.mutate(payload);
+        }
+
+    };
+
+
+
+
+
+
     return (
         <>
             <form onSubmit={handleSubmit(submit)}>
@@ -222,7 +284,14 @@ const AdditionalQuotation = () => {
                             <Card className="col-span-12">
                                 <CardHeader className="sm:flex-row sm:items-center gap-3">
                                     <div className="flex-1 text-xl font-medium text-default-700 whitespace-nowrap">
-                                        Create Additional Quotation
+
+
+                                        {
+                                            quotaionsId
+                                                ? "Update Additional Quotation"
+                                                : viewAdQuId
+                                                    ? "View Additional Quotation"
+                                                    : "Create Additional Quotation"}
                                     </div>
 
                                     <div className="flex items-center justify-between sm:w-auto gap-2">
@@ -259,6 +328,7 @@ const AdditionalQuotation = () => {
                                                                 size="lg"
                                                                 id="quDateAndTime"
                                                                 {...field}
+                                                                readOnly={viewAdQuId}
                                                             />
                                                         )}
                                                     />
@@ -288,6 +358,7 @@ const AdditionalQuotation = () => {
                                                                 value={CustomerList?.find(
                                                                     (option) => option.value === value
                                                                 )}
+                                                                isDisabled
                                                             />
                                                         )}
                                                     />
@@ -314,6 +385,7 @@ const AdditionalQuotation = () => {
                                                                 value={CarList?.find(
                                                                     (option) => option.value === value
                                                                 )}
+                                                                isDisabled
                                                             />
                                                         )}
                                                     />
@@ -338,6 +410,7 @@ const AdditionalQuotation = () => {
                                                                 value={JobList?.find(
                                                                     (option) => option.value === value
                                                                 )}
+                                                                isDisabled
                                                             />
                                                         )}
                                                     />
@@ -368,7 +441,7 @@ const AdditionalQuotation = () => {
                                                                 size="lg"
                                                                 id="qudaystocomplete"
                                                                 {...field}
-
+                                                                readOnly={viewAdQuId}
                                                             />
                                                         )}
                                                     />
@@ -392,7 +465,10 @@ const AdditionalQuotation = () => {
                                                         className="sr-only peer"
                                                         checked={isSectionView}
                                                         onClick={() => {
-                                                            toggleView();
+                                                            if (!viewAdQuId) {
+                                                                toggleView();
+                                                            }
+
                                                         }}
                                                     />
                                                     <div className="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary/80"></div>
@@ -455,6 +531,7 @@ const AdditionalQuotation = () => {
                                                                                         placeholder="Item name"
                                                                                         size="lg"
                                                                                         {...field}
+                                                                                        readOnly={viewAdQuId}
                                                                                     />
                                                                                 )}
                                                                             />
@@ -484,6 +561,7 @@ const AdditionalQuotation = () => {
                                                                                         placeholder="Item price"
                                                                                         size="lg"
                                                                                         {...field}
+                                                                                        readOnly={viewAdQuId}
 
                                                                                     />
                                                                                 )}
@@ -500,56 +578,58 @@ const AdditionalQuotation = () => {
                                                                     </div>
 
 
-
-
-                                                                    {index === fields.length - 1 ? (
-                                                                        <>
-                                                                            {index != 0 && (
+                                                                    {viewAdQuId ? (<></>) : (<>
+                                                                        {index === fields.length - 1 ? (
+                                                                            <>
+                                                                                {index != 0 && (
+                                                                                    <Button
+                                                                                        className="border-default-300 mt-5"
+                                                                                        size="icon"
+                                                                                        variant="outline"
+                                                                                        type="button"
+                                                                                        title="Remove"
+                                                                                        onClick={() => remove(index)}
+                                                                                    >
+                                                                                        <Icon
+                                                                                            icon="heroicons:trash"
+                                                                                            className="w-5 h-5 text-default-300"
+                                                                                        />
+                                                                                    </Button>
+                                                                                )}
                                                                                 <Button
                                                                                     className="border-default-300 mt-5"
                                                                                     size="icon"
                                                                                     variant="outline"
                                                                                     type="button"
-                                                                                    title="Remove"
-                                                                                    onClick={() => remove(index)}
+                                                                                    title="Add Item"
+                                                                                    onClick={() =>
+                                                                                        append({
+                                                                                            itemName: "",
+                                                                                            itemPrice: "",
+                                                                                        })
+                                                                                    }
                                                                                 >
-                                                                                    <Icon
-                                                                                        icon="heroicons:trash"
-                                                                                        className="w-5 h-5 text-default-300"
-                                                                                    />
+                                                                                    <FiPlus className="w-5 h-5 text-default-300" />
                                                                                 </Button>
-                                                                            )}
+                                                                            </>
+                                                                        ) : (
                                                                             <Button
                                                                                 className="border-default-300 mt-5"
                                                                                 size="icon"
                                                                                 variant="outline"
                                                                                 type="button"
-                                                                                title="Add Item"
-                                                                                onClick={() =>
-                                                                                    append({
-                                                                                        itemName: "",
-                                                                                        itemPrice: "",
-                                                                                    })
-                                                                                }
+                                                                                title="Remove"
+                                                                                onClick={() => remove(index)}
                                                                             >
-                                                                                <FiPlus className="w-5 h-5 text-default-300" />
+                                                                                <Icon
+                                                                                    icon="heroicons:trash"
+                                                                                    className="w-5 h-5 text-default-300"
+                                                                                />
                                                                             </Button>
-                                                                        </>
-                                                                    ) : (
-                                                                        <Button
-                                                                            className="border-default-300 mt-5"
-                                                                            size="icon"
-                                                                            variant="outline"
-                                                                            type="button"
-                                                                            title="Remove"
-                                                                            onClick={() => remove(index)}
-                                                                        >
-                                                                            <Icon
-                                                                                icon="heroicons:trash"
-                                                                                className="w-5 h-5 text-default-300"
-                                                                            />
-                                                                        </Button>
-                                                                    )}
+                                                                        )}
+                                                                    </>)}
+
+
 
 
 
@@ -561,22 +641,74 @@ const AdditionalQuotation = () => {
                                             </div>
                                         )}
 
+
+
+                                        {quotaionsId && quotationData?.status === 'Draft' ? (<></>) : (<></>)}
+                                        {viewAdQuId && (<>
+
+                                            <div className="w-full flex justify-between gap-4">
+                                                <div className="w-[20rem]">
+                                                    <Label htmlFor="startDate" className="font-bold">
+                                                        Status
+                                                    </Label>
+                                                    <div className="flex gap-2 w-full">
+                                                        <Controller
+                                                            name="quStatus"
+                                                            control={control}
+                                                            render={({ field: { onChange, value } }) => (
+                                                                <Select
+                                                                    className="react-select w-full"
+                                                                    classNamePrefix="select"
+                                                                    id="quStatus"
+                                                                    options={AllOptions}
+                                                                    onFocus={() => setIsFocused(true)}
+                                                                    onBlur={() => setIsFocused(false)}
+                                                                    onChange={(selectedOption) => {
+                                                                        onChange(selectedOption.value);
+                                                                        handleStatusUpdate(selectedOption.value);
+                                                                    }}
+                                                                    value={AllOptions?.find((option) => option.value === value)}
+
+                                                                />
+                                                            )}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </>)}
+
+
                                     </div>
                                 </CardContent>
 
                                 <CardFooter className="flex justify-between gap-4 flex-wrap">
-                                    <div className="flex items-end gap-3">
-                                        <Button onClick={() => {
-                                            setSnewtatus("Draft");
-                                        }} className="ml-auto" type="submit" variant="primary">
-                                            Save Draft
+                                    {viewAdQuId && (
+                                        <Button
+                                            type="button"
+                                            onClick={() => router.back()}
+                                            className="group hover:bg-default-200 hover:text-default-900 text-xs font-semibold whitespace-nowrap"
+                                        >
+                                            Back
                                         </Button>
-                                        <Button onClick={() => {
-                                            setSnewtatus("Pending");
-                                        }} className="ml-auto" type="submit" variant="primary">
-                                            Create
-                                        </Button>
-                                    </div>
+                                    )}
+
+                                    {!viewAdQuId && (<>
+
+                                        <div className="flex items-end gap-3">
+                                            <Button onClick={() => {
+                                                setSnewtatus("Draft");
+                                            }} className="ml-auto" type="submit" variant="primary">
+                                                Save Draft
+                                            </Button>
+                                            <Button onClick={() => {
+                                                setSnewtatus("Pending");
+                                            }} className="ml-auto" type="submit" variant="primary">
+                                                Create
+                                            </Button>
+                                        </div>
+                                    </>)}
+
                                 </CardFooter>
                             </Card>
                         </div>

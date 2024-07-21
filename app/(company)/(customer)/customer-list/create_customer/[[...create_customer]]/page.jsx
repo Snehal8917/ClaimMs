@@ -42,13 +42,48 @@ const carSchema = z.object({
 const schema = z.object({
   // email: z.string().email({ message: "Invalid email address" }),
   email: z.any().optional(),
-  mobileNumber: z.any().optional(),
-  fullName: z.any().optional(),
-  customerEmiratesId: z.string().nonempty("Emirates Id is required"),
-  licenceNo: z.any().optional(),
-  licenceIssueDate: z.any().optional(),
-  licenceExpiryDate: z.any().optional(),
-  tcNo: z.any().optional(),
+  mobileNumber: z
+    .string()
+    .refine((value) => {
+      return value !== undefined && value.trim() !== "";
+    }, "Mobile number is required")
+    .refine((value) => {
+      return /^[0-9]{10}$/.test(value);
+    }, "Invalid mobile number format"),
+    fullName: z.string().refine((value) => value.trim() !== "", {
+      message: "Customer Name required",
+    }),
+    customerEmiratesId: z.string().refine((value) => value.trim() !== "", {
+      message: "Customer Emirates ID is required",
+    }),
+    licenceNo: z.string().refine((value) => {
+      return value !== undefined && value.trim() !== "";
+    }, "Licence number is required"),
+    licenceIssueDate: z
+    .string()
+    .refine((value) => value.trim() !== "", {
+      message: "Issue date required",
+    })
+    .transform((str) => new Date(str)),
+  licenceExpiryDate: z
+    .string()
+    .refine((value) => value.trim() !== "", {
+      message: "Expiry date required",
+    })
+    .refine((value, ctx) => {
+      return value > (ctx?.licenceIssueDate || "");
+    }, "Expiry date must be after issue date")
+    .transform((str) => new Date(str)),
+    tcNo: z.string().refine((value) => value.trim() !== "", {
+      message: "TC number is required",
+    }),
+}).superRefine((data, ctx) => {
+  if (data.email && !/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(data.email)) {
+    ctx.addIssue({
+      path: ["email"],
+      message: "Invalid email format",
+    });
+  }
 });
 
 const CustomerPage = () => {
@@ -478,16 +513,16 @@ const CustomerPage = () => {
                                     {...register("fullName")}
                                     size="lg"
                                     id="fullName"
-                                    // className={cn("w-full", {
-                                    //   "border-destructive": errors.customerName,
-                                    // })}
+                                    className={cn("w-full", {
+                                      "border-destructive": errors.fullName,
+                                    })}
                                   />
                                 </div>
-                                {/* {errors.customerName && (
+                                {errors.fullName && (
                                     <div className="text-destructive mt-2">
-                                      {errors.customerName.message}
+                                      {errors.fullName.message}
                                     </div>
-                                  )} */}
+                                  )}
                               </div>
 
                               <div>
@@ -503,12 +538,12 @@ const CustomerPage = () => {
                                       "border-destructive": errors.email,
                                     })}
                                   />
-                                </div>
                                 {errors.email && (
                                   <div className="text-destructive mt-2">
                                     {errors.email.message}
                                   </div>
                                 )}
+                                </div>
                               </div>
                               <div>
                                 <Label>Mobile no</Label>
@@ -518,7 +553,15 @@ const CustomerPage = () => {
                                   {...register("mobileNumber")}
                                   size="lg"
                                   id="mobileNumber"
+                                  className={cn("w-full", {
+                                    "border-destructive": errors.mobileNumber,
+                                  })}
                                 />
+                              {errors.mobileNumber && (
+                                  <div className="text-destructive mt-2">
+                                    {errors.mobileNumber.message}
+                                  </div>
+                                )}
                               </div>
                               <div>
                                 <Label htmlFor="customerEmiratesId">
@@ -549,12 +592,12 @@ const CustomerPage = () => {
                                     "border-destructive": errors.customerEmiratesId,
                                   })}
                                 /> */}
-                              </div>
                               {errors.customerEmiratesId && (
                                 <div className="text-destructive mt-2">
                                   {errors.customerEmiratesId.message}
                                 </div>
                               )}
+                              </div>
                             </div>
 
                             <div className="w-full lg:w-[48%] space-y-4">
@@ -569,8 +612,16 @@ const CustomerPage = () => {
                                     {...register("licenceNo")}
                                     size="lg"
                                     id="licenceNo"
+                                    className={cn("w-full", {
+                                      "border-destructive": errors.licenceNo,
+                                    })}
                                   />
                                 </div>
+                                  {errors.licenceNo && (
+                                  <div className="text-destructive mt-2">
+                                    {errors.licenceNo.message}
+                                  </div>
+                                )}
                               </div>
                               <div>
                                 <Label htmlFor="licenceIssueDate">
@@ -583,8 +634,16 @@ const CustomerPage = () => {
                                     {...register("licenceIssueDate")}
                                     size="lg"
                                     id="licenceIssueDate"
+                                    className={cn("w-full", {
+                                      "border-destructive": errors.licenceIssueDate,
+                                    })}
                                   />
                                 </div>
+                                {errors.licenceIssueDate && (
+                                  <div className="text-destructive mt-2">
+                                    {errors.licenceIssueDate.message}
+                                  </div>
+                                )}
                               </div>
                               <div>
                                 <Label htmlFor="licenceExpiryDate">
@@ -597,8 +656,16 @@ const CustomerPage = () => {
                                     {...register("licenceExpiryDate")}
                                     size="lg"
                                     id="licenceExpiryDate"
+                                    className={cn("w-full", {
+                                      "border-destructive": errors.licenceExpiryDate,
+                                    })}
                                   />
                                 </div>
+                                {errors.licenceExpiryDate && (
+                                  <div className="text-destructive mt-2">
+                                    {errors.licenceExpiryDate.message}
+                                  </div>
+                                )}
                               </div>
                               <div>
                                 <Label htmlFor="tcNo">TC Number</Label>
@@ -609,8 +676,16 @@ const CustomerPage = () => {
                                     {...register("tcNo")}
                                     size="lg"
                                     id="tcNo"
+                                    className={cn("w-full", {
+                                      "border-destructive": errors.tcNo,
+                                    })}
                                   />
                                 </div>
+                                {errors.tcNo && (
+                                  <div className="text-destructive mt-2">
+                                    {errors.tcNo.message}
+                                  </div>
+                                )}
                               </div>
                             </div>
 

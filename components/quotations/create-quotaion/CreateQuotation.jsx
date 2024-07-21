@@ -47,6 +47,7 @@ import { data } from "autoprefixer";
 
 import SectionAddItem from "./SectionAddItem";
 import { quotationFormSchemaSection } from "../schema/quotaionFormSchema";
+import { updateSpQuotationeById } from "@/config/quotationConfig/quotation.config";
 const styles = {
   option: (provided, state) => ({
     ...provided,
@@ -307,13 +308,39 @@ const CreateQuotation = () => {
     },
   });
 
+  const updateSpQuotationMutation = useMutation({
+    mutationKey: ["updateSpQuotationMutation"],
+    mutationFn: async (data) => {
+      const formData = new FormData();
+      formData.append("quotatioDetails", JSON.stringify(data));
+
+      const quotaionsId = params?.quotaionsId;
+      const viewQuotationId = params?.viewQuotationId;
+
+      return await updateSpQuotationeById(quotaionsId || viewQuotationId, formData);
+    },
+    onSuccess: (response) => {
+      toast.success(response?.message);
+      // router.push("/quotations-list");
+    },
+    onError: (error) => {
+      toast.error(error?.data?.message);
+    },
+  });
+
+
   const handleStatusUpdate = (newStatus) => {
     const payload = {
       status: newStatus,
     };
     if (newStatus !== "Approved") {
       if (!jobCardId) {
-        updateQuotationMutation.mutate(payload);
+        if (quotationData?.isSupplmenteryQuotation) {
+          updateSpQuotationMutation.mutate(payload)
+        } else {
+          updateQuotationMutation.mutate(payload);
+        }
+
       }
     }
   };
@@ -448,8 +475,7 @@ const CreateQuotation = () => {
         (designation === "CSR" && initialStatus === "Submitted")));
   const isStatusEditable = [
     "Draft",
-    "Submitted",
-    "Declined",
+    "Submitted"
   ].includes(initialStatus);
 
   ///

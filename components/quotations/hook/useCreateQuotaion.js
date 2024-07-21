@@ -10,6 +10,7 @@ import {
   updateQuotation,
 } from "../../../action/quotationAction/quotation-action";
 import { getSingleJobCardAction } from "../../../action/employeeAction/jobcard-action";
+import { updateSpQuotationeById } from "@/config/quotationConfig/quotation.config";
 
 export const useCreateQuotaion = ({ CsrList }) => {
   const [loading, setLoading] = useState(false);
@@ -96,6 +97,35 @@ export const useCreateQuotaion = ({ CsrList }) => {
   });
   //
 
+
+  ///
+
+
+  const updateSpQuotationMutation = useMutation({
+    mutationKey: ["updateSpQuotationMutation"],
+    mutationFn: async (data) => {
+      const formData = new FormData();
+      formData.append("quotatioDetails", JSON.stringify(data));
+      if (lpoStep) {
+
+        formData.append("lpo", lpoStep[0]);
+      }
+      const quotaionsId = params?.quotaionsId;
+      const viewQuotationId = params?.viewQuotationId;
+
+      return await updateSpQuotationeById(quotaionsId || viewQuotationId, formData);
+    },
+    onSuccess: (response) => {
+      toast.success(response?.message);
+      router.push("/quotations-list");
+    },
+    onError: (error) => {
+      toast.error(error?.data?.message);
+    },
+  });
+
+  ///
+
   //spec
 
   const addSupQuotationMutation = useMutation({
@@ -132,8 +162,11 @@ export const useCreateQuotaion = ({ CsrList }) => {
     },
   });
 
+
+
+  console.log(quotationData?.isSupplmenteryQuotation);
   const handleQuotationForm = async (values) => {
-    console.log("i am values yyyy:-", values);
+
     setLoading(true);
     const dateTime = new Date(values?.quDateAndTime);
 
@@ -178,7 +211,44 @@ export const useCreateQuotaion = ({ CsrList }) => {
     }
 
     try {
-      if (quotaionsId && quotationData?.status === "Draft") {
+      if (quotaionsId && quotationData?.status === "Draft" && quotationData?.isSupplmenteryQuotation) {
+        const payLoadUpdate = {
+          date: dateTime.toISOString().split("T")[0],
+          time: timeFormatted,
+          customer: quCustomer,
+          car: quCar,
+          insuranceCompany: quInsuranceCom,
+          daysToQuote: qudaystocomplete,
+          listOfItems: itemList,
+          CCRId: quCustomerCareRepresentative,
+          jobCardId: quJobCard,
+          status: snewtatus || quStatus,
+          sectionItemList: sectionItems,
+        };
+
+        await updateSpQuotationMutation.mutateAsync(payLoadUpdate);
+      } else if ((quotaionsId && quotationData?.status !== "Draft") || viewQuotationId) {
+        const payLoadUpdate = {
+          date: dateTime.toISOString().split("T")[0],
+          time: timeFormatted,
+          customer: quCustomer,
+          car: quCar,
+          insuranceCompany: quInsuranceCom,
+          daysToQuote: qudaystocomplete,
+          listOfItems: itemList,
+          CCRId: quCustomerCareRepresentative,
+          jobCardId: quJobCard,
+          status: quStatus,
+          sectionItemList: sectionItems,
+        };
+        if (quotationData?.isSupplmenteryQuotation) {
+          await updateSpQuotationMutation.mutateAsync(payLoadUpdate);
+        } else {
+          await updateQuotationMutation.mutateAsync(payLoadUpdate);
+        }
+
+      }
+      else if (quotaionsId && quotationData?.status === "Draft") {
         await updateQuotationMutation.mutateAsync(payLoad);
       } else if ((quotaionsId && quotationData?.status !== "Draft") || viewQuotationId) {
         const payLoadUpdate = {

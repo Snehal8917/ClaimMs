@@ -194,18 +194,18 @@ const QuotationView = () => {
       header: () => <div className="text-center">Status</div>,
       cell: ({ row }) => (
         <div className="text-center">
-        <Badge
-          variant="outline"
-          color={
-            (row?.original?.status === "Draft" && "default") ||
-            (row?.original?.status === "Approved" && "success") ||
-            (row?.original?.status === "Declined" && "warning") ||
-            (row?.original?.status === "Pending" && "default")
-          }
-          className="capitalize"
-        >
-          {row?.original?.status || "-"}
-        </Badge>
+          <Badge
+            variant="outline"
+            color={
+              (row?.original?.status === "Draft" && "default") ||
+              (row?.original?.status === "Approved" && "success") ||
+              (row?.original?.status === "Declined" && "warning") ||
+              (row?.original?.status === "Pending" && "default")
+            }
+            className="capitalize"
+          >
+            {row?.original?.status || "-"}
+          </Badge>
         </div>
       ),
       filterFn: (row, id, value) => {
@@ -237,7 +237,8 @@ const QuotationView = () => {
       cell: ({ row }) => {
         const jobCardId = row?.original?._id;
         const statusBtn = row?.original?.status;
-        const isLatestQuotation=row?.original?.isLatestQuotation;
+        const isLatestQuotation = row?.original?.isLatestQuotation;
+        const isSupplmenteryQuotation = row?.original?.isSupplmenteryQuotation;
         return (
           <div className="flex gap-3 items-center justify-end">
             {statusBtn === "Approved" && (
@@ -254,7 +255,7 @@ const QuotationView = () => {
                 </Button> */}
               </>
             )}
-            {statusBtn === "Declined"  &&  isLatestQuotation && (
+            {statusBtn === "Declined" && isLatestQuotation && !isSupplmenteryQuotation && (
               <>
                 <Button
                   size="icon"
@@ -290,7 +291,7 @@ const QuotationView = () => {
             </Button>
             {statusBtn !== "Pending" && statusBtn !== "Approved" && (
               <>
-                {statusBtn !== "Declined" &&  statusBtn !== "Pending" &&(
+                {statusBtn !== "Declined" && statusBtn !== "Pending" && (
                   <Button
                     size="icon"
                     className="h-9 w-9 rounded bg-default-100 dark:bg-default-200 text-default-500 hover:text-primary-foreground"

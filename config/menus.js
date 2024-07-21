@@ -50,7 +50,6 @@ export const menusConfig = {
       {
         title: "Job Cards",
         icon: ClipBoard,
-        href: "/jobcard-list",
         role: ["company", "employee"],
         child: [
           {

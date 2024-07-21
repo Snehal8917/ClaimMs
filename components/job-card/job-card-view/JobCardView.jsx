@@ -1,37 +1,17 @@
 "use client";
-import Image from "next/image";
-import React, { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import CustomerView from "../customer-view/CustomerView";
-import ClaimView from "../claim-view/ClaimView";
-import QuotionView from "../quotation-view/QuotionView";
-import AdditionalQuotionView from "../additional-quotation-view/AdditionalQuotionView";
-import DocuementView from "../docuemnt-view/DocuementView";
-import HistoryView from "../history-view/HistoryView";
 import { getSingleJobCardAction } from "@/action/employeeAction/jobcard-action";
 import { useQuery } from "@tanstack/react-query";
+import { useParams } from "next/navigation";
+import { useState } from "react";
+import AdditionalQuotionView from "../additional-quotation-view/AdditionalQuotionView";
+import ClaimView from "../claim-view/ClaimView";
+import CustomerView from "../customer-view/CustomerView";
+import DocuementView from "../docuemnt-view/DocuementView";
+import HistoryView from "../history-view/HistoryView";
+import QuotionView from "../quotation-view/QuotionView";
 
 const JobCardView = () => {
   const [activeTab, setActiveTab] = useState("Customer");
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "Customer":
-        return <CustomerView />;
-      case "ClaimView":
-        return <ClaimView />;
-      case "QuotationView":
-        return <QuotionView />;
-      case "AdditionalQuotionView":
-        return <AdditionalQuotionView />;
-      case "DocuementView":
-        return <DocuementView />;
-      case "HistoryView":
-        return <HistoryView />;
-      default:
-        return null;
-    }
-  };
 
   const params = useParams();
   const jobCardId = params?.view_jobcard;
@@ -47,6 +27,24 @@ const JobCardView = () => {
     retry: false,
   });
 
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "Customer":
+        return <CustomerView />;
+      case "ClaimView":
+        return <ClaimView />;
+      case "QuotationView":
+        return <QuotionView />;
+      case "AdditionalQuotionView":
+        return <AdditionalQuotionView jobcardData={jobcardData} />;
+      case "DocuementView":
+        return <DocuementView />;
+      case "HistoryView":
+        return <HistoryView />;
+      default:
+        return null;
+    }
+  };
   return (
     <>
       <div className="flex flex-col justify-start items-start gap-6">

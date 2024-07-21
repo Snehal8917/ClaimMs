@@ -9,6 +9,8 @@ import {
   createAdQuotation,
   getAdQuotationeById,
   getAdQuotationAll,
+  updateAdQuotationeById,
+  updateSpQuotationeById,
 } from "../../config/quotationConfig/quotation.config";
 
 export const addQuotation = async (data) => {
@@ -88,5 +90,18 @@ export const getAllAdQuotation = async ({
   jobCardId = "",
 }) => {
   const response = await getAdQuotationAll({ page, size, all, search, jobCardId });
+  return response;
+};
+
+///update ad qu
+
+export const updateAdQuotation = async (id, updatedFields) => {
+  const response = await updateAdQuotationeById(id, updatedFields);
+  return response;
+};
+
+///
+export const updateSpQuotation = async (id, updatedFields) => {
+  const response = await updateSpQuotationeById(id, updatedFields);
   return response;
 };

@@ -26,7 +26,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-const AdditionalQuotionView = () => {
+const AdditionalQuotionView = ({ jobcardData }) => {
   const params = useParams();
   const jobCardIEd = params?.view_jobcard;
   const statusOptions = ["Approved", "Pending", "Declined", "Draft"];
@@ -80,11 +80,11 @@ const AdditionalQuotionView = () => {
   }, [pageIndex, pageSize, searchString, refetch]);
 
   const handleEditClick = (jobCardId) => {
-    router.push(`/quotations/update/${jobCardId}`);
+    router.push(`/additional-quotation/update/${jobCardId}`);
   };
 
   const handleViewClick = (jobCardId) => {
-    router.push(`/quotations/view/${jobCardId}`);
+    router.push(`/additional-quotation/view/${jobCardId}`);
   };
 
   const handleDeleteClick = (jobCardId) => {
@@ -134,6 +134,8 @@ const AdditionalQuotionView = () => {
   const handleReCreate = (quotationID) => {
     router.push(`/quotations/recreate/${quotationID}`);
   };
+
+  const enable_Quotation = jobcardData?.status !== "Draft"
 
   //
 
@@ -255,7 +257,6 @@ const AdditionalQuotionView = () => {
   if (error) {
     return <div>Error loading data</div>;
   }
-console.log(data?.pagination,"datatatatata");
   const quotations = data?.data?.allAdditionalWorkQuotes || [];
 
   return (
@@ -265,12 +266,14 @@ console.log(data?.pagination,"datatatatata");
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Additional Quotations List</CardTitle>
+              {enable_Quotation && 
               <Button asChild>
                   <Link href={`/additional-quotation/create/${jobCardIEd}`}>
                     <Plus className="w-5 h-5 ltr:mr-2 rtl:ml-2" />
                     Create Additional Quotation
                   </Link>
                 </Button>
+                }
             </div>
           </CardHeader>
           <CardContent className="p-0">
