@@ -156,3 +156,25 @@ export const updateAdQuotationeById = async (id, updatedFields) => {
     throw error;
   }
 };
+
+//my task
+
+
+
+export const getQuotationMyTask = async ({
+  page = 1,
+  size = 10,
+  all = false,
+  search = "",
+  jobCardId = "",
+}) => {
+  try {
+    const response = await AxiosCreator.get(
+      `/api/my-task/quotation?page=${page}&size=${size}&all=${all}&search=${search}&jobCardId=${jobCardId}`
+    );
+
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

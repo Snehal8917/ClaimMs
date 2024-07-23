@@ -29,6 +29,7 @@ const CustomerListPage = () => {
   const queryClient = useQueryClient();
   const [tableLoading, setTableLoading] = useState(false);
   const [componentLoading, setComponentLoading] = useState(true);
+  const [selectedRows, setSelectedRows] = useState([]);
 
   const role = session?.role;
 
@@ -187,7 +188,7 @@ const CustomerListPage = () => {
               disabled={!canDeleteCustomer}
               onClick={(e) => {
                 e.stopPropagation();
-                handleDeleteClick(customerId);
+                handleDeleteClick([customerId]);
               }}
             >
               <Icon icon="heroicons:trash" className="w-5 h-5" />
@@ -216,12 +217,20 @@ const CustomerListPage = () => {
   };
 
   const deleteMutation = useMutation({
-    mutationFn: deleteCustomerAction,
     mutationKey: ["deleteCustomerAction"],
+    mutationFn: async (data) => {
+      const ids = {
+        ids: data,
+      };
+
+      return await deleteCustomerAction(ids);
+      // return await addEmiratesData(formData);
+    },
     onSuccess: (res) => {
       toast.success(res.data.message);
       setModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ["getCustomerListAction"] });
+      setSelectedRows([]);
     },
     onError: (error) => {
       console.error("Error deleting employee:", error);
@@ -231,6 +240,18 @@ const CustomerListPage = () => {
   const handleDeleteConfirm = () => {
     deleteMutation.mutate(customerId);
     setModalOpen(false);
+  };
+  const handleDeleteSelected = (selectedRowIds) => {
+        const allIds = data.data.customers.map((customer) => customer._id);
+    console.log(allIds,"allIds");
+    const selectedIds = selectedRowIds.map((index) => allIds[index]);
+    
+    console.log(selectedIds,"selectedIds");
+
+    handleDeleteClick(selectedIds);
+
+    // queryClient.setQueryData(["GetJobCardsList"], newData);
+    refetch();
   };
 
   const {
@@ -332,6 +353,10 @@ const CustomerListPage = () => {
               tableLoading={tableLoading}
               handleViewClick={handleCustomerView}
               rowClickable
+              handleDeleteSelected={handleDeleteSelected}
+              showCheckbox={data?.data?.customers.length > 0 ? true : false}
+              setSelectedRows={setSelectedRows}
+              selectedRows={selectedRows}
             />
           </CardContent>
         </Card>

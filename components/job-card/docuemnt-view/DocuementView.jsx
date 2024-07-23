@@ -228,7 +228,7 @@ const DocuementView = () => {
                         Police Report
                       </Label>
                       <div className="flex gap-2  mt-4 ml-1">
-                        {jobcardData?.documents?.policeReport?.[0] ? (
+                        {/* {jobcardData?.documents?.policeReport ? (
                           <>
                             <img
                               src={jobcardData?.documents?.policeReport?.[0]}
@@ -250,9 +250,65 @@ const DocuementView = () => {
                               />
                             </a>
                           </>
-                        ) : (
+                        ) 
+                        : (
                           <p>No Police Report available</p>
-                        )}
+                        )} */}
+                        {jobcardData?.documents?.policeReport?.length > 0 ? (
+  jobcardData?.documents?.policeReport?.map((file, index) => {
+    if (typeof file === "string") {
+      if (/\.(jpg|jpeg|gif|svg|png)$/i.test(file)) {
+        return (
+          <div key={index} className="flex flex-col items-center gap-2">
+            <img
+              src={file}
+              alt={`Car Pic ${index + 1}`}
+              width="400"
+              height="200"
+            />
+            <a
+              href={file}
+              target="_blank"
+              download={`CarPic_${index + 1}.jpg`}
+              className="h-8 rounded bg-default-100 dark:bg-default-200 text-default-500 p-2 hover:text-white hover:bg-primary"
+            >
+              <Icon
+                icon="material-symbols:download"
+                width="1.2em"
+                height="1.2em"
+              />
+            </a>
+          </div>
+        );
+      } else if (/\.(pdf|doc)$/i.test(file)) {
+        return (
+          <div key={index} className="flex flex-col items-center gap-2">
+            <embed src={file} type="application/pdf" width="400" height="200" />
+            <a
+              href={file}
+              target="_blank"
+              download={`CarDoc_${index + 1}`}
+              className="h-8 rounded bg-default-100 dark:bg-default-200 text-default-500 p-2 hover:text-white hover:bg-primary"
+            >
+              <Icon
+                icon="material-symbols:download"
+                width="1.2em"
+                height="1.2em"
+              />
+            </a>
+          </div>
+        );
+      } else {
+        return <span key={index}>File type not supported</span>;
+      }
+    } else {
+      return <span key={index}>Invalid file format</span>;
+    }
+  })
+) : (
+  <p>No Police Report available</p>
+)}
+
                       </div>
                     </div>
                   </div>
@@ -264,7 +320,7 @@ const DocuementView = () => {
                       Car Before Photos
                     </Label>
                     <div className="flex gap-2 mt-4 ml-1">
-                      {jobcardData?.documents?.beforePhotos?.length > 0 ? (
+                      {/* {jobcardData?.documents?.beforePhotos?.length > 0 ? (
                         jobcardData?.documents?.beforePhotos?.map(
                           (photo, index) => (
                             <div
@@ -293,7 +349,61 @@ const DocuementView = () => {
                         )
                       ) : (
                         <p>No Car Pic available</p>
-                      )}
+                      )} */}
+                                             {jobcardData?.documents?.beforePhotos?.length > 0 ? (
+  jobcardData?.documents?.beforePhotos?.map((file, index) => {
+    if (typeof file === "string") {
+      if (/\.(jpg|jpeg|gif|svg|png)$/i.test(file)) {
+        return (
+          <div key={index} className="flex flex-col items-center gap-2">
+            <img
+              src={file}
+              alt={`Car Pic ${index + 1}`}
+              width="400"
+              height="200"
+            />
+            <a
+              href={file}
+              target="_blank"
+              download={`CarPic_${index + 1}.jpg`}
+              className="h-8 rounded bg-default-100 dark:bg-default-200 text-default-500 p-2 hover:text-white hover:bg-primary"
+            >
+              <Icon
+                icon="material-symbols:download"
+                width="1.2em"
+                height="1.2em"
+              />
+            </a>
+          </div>
+        );
+      } else if (/\.(pdf|doc)$/i.test(file)) {
+        return (
+          <div key={index} className="flex flex-col items-center gap-2">
+            <embed src={file} type="application/pdf" width="400" height="200" />
+            <a
+              href={file}
+              target="_blank"
+              download={`CarDoc_${index + 1}`}
+              className="h-8 rounded bg-default-100 dark:bg-default-200 text-default-500 p-2 hover:text-white hover:bg-primary"
+            >
+              <Icon
+                icon="material-symbols:download"
+                width="1.2em"
+                height="1.2em"
+              />
+            </a>
+          </div>
+        );
+      } else {
+        return <span key={index}>File type not supported</span>;
+      }
+    } else {
+      return <span key={index}>Invalid file format</span>;
+    }
+  })
+) : (
+  <p>No Car Report available</p>
+)}
                     </div>
                   </div>
                 </div>

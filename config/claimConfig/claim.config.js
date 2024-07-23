@@ -22,3 +22,14 @@ export const updateClaimById = async (id, updatedFields) => {
         throw error;
     }
   };
+
+//my task
+
+export const GetMyTaskClaimsCon = async ({ page = 1, size = 10, all = false, search = "" }) => {
+    try {
+        const response = await AxiosCreator.get(`/api/my-task/claim?page=${page}&size=${size}&all=${all}&search=${search}`);
+        return response.data;
+    } catch (error) {
+        return error.response.data;
+    }
+}

@@ -9,7 +9,9 @@ import {
 import { extractCarAction } from "@/action/extractDataAction/carRcAction";
 import { addLicenceData } from "@/action/licenceAction/licence-action";
 import FileUploaderMultiple from "@/components/common/file-multi-uploader/file-uploader-multiple";
+import FileUploaderMultipleFrontBack from "@/components/common/file-upload-front-back/FileUploaderMultipleFrontBack";
 import ClickableStep from "@/components/common/steps/page";
+import DropZone from "@/components/common/drop-zone/DropZone";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,7 +32,10 @@ import Select from "react-select";
 import { z } from "zod";
 import { ratio } from "fuzzball";
 
-import { getGarrageInsuranceCompanies, getInsuranceCompanies } from "@/action/companyAction/insurance-action";
+import {
+  getGarrageInsuranceCompanies,
+  getInsuranceCompanies,
+} from "@/action/companyAction/insurance-action";
 import { getMasterCarDataAction } from "@/action/masterCar/mastercar-action";
 import LayoutLoader from "@/components/layout-loader";
 import { useParams, useRouter } from "next/navigation";
@@ -48,6 +53,7 @@ const carDetailsSchema = z.object({
   make: z.string().min(1, { message: "Car Make is required" }),
   model: z.string().min(1, { message: "Car Model is required" }),
   trim: z.string().min(1, { message: "Car Trim is required" }),
+
   year: z
     .string()
     .min(4, { message: "Car Year is required" })
@@ -73,69 +79,77 @@ const documentSchema = z.object({
 });
 
 // Step 1 schema
-const step1Schema = z.object({
-  // email: z
-  //   .string()
-  //   .optional()
-  //   .refine((value) => {
-  //     return value !== undefined && value.trim() !== "";
-  //   }, "Email is required")
-  //   .refine((value) => {
-  //     return /^\S+@\S+\.\S+$/.test(value);
-  //   }, "Invalid email format"),
+const step1Schema = z
+  .object({
+    // email: z
+    //   .string()
+    //   .optional()
+    //   .refine((value) => {
+    //     return value !== undefined && value.trim() !== "";
+    //   }, "Email is required")
+    //   .refine((value) => {
+    //     return /^\S+@\S+\.\S+$/.test(value);
+    //   }, "Invalid email format"),
 
-  email: z.string().optional(),
-  mobileNumber: z
-    .string()
-    .refine((value) => {
+    email: z.string().optional(),
+    mobileNumber: z
+      .string()
+      .refine((value) => {
+        return value !== undefined && value.trim() !== "";
+      }, "Mobile number is required")
+      .refine((value) => {
+        return /^[0-9]{10}$/.test(value);
+      }, "Invalid mobile number format"),
+    fullName: z.string().refine((value) => value.trim() !== "", {
+      message: "Customer Name required",
+    }),
+  
+  emiratesId: z.array(z.any())
+    .min(1, { message: "Emirates ID required" }),
+  drivingId: z.array(z.any())
+    .min(1, { message: "Driving ID required" }),
+    //   drivingId: z.array(z.any()).optional(),
+    customerEmiratesId: z.string().refine((value) => value.trim() !== "", {
+      message: "Customer Emirates ID is required",
+    }),
+    licenceNo: z.string().refine((value) => {
       return value !== undefined && value.trim() !== "";
-    }, "Mobile number is required")
-    .refine((value) => {
-      return /^[0-9]{10}$/.test(value);
-    }, "Invalid mobile number format"),
-  fullName: z.string().refine((value) => value.trim() !== "", {
-    message: "Customer Name required",
-  }),
-  //   emiratesId: z.array(z.any()).optional(),
-  //   drivingId: z.array(z.any()).optional(),
-  customerEmiratesId: z.string().refine((value) => value.trim() !== "", {
-    message: "Customer Emirates ID is required",
-  }),
-  licenceNo: z.string().refine((value) => {
-    return value !== undefined && value.trim() !== "";
-  }, "Licence number is required"),
-  licenceIssueDate: z
-    .string()
-    .refine((value) => value.trim() !== "", {
-      message: "Issue date required",
-    })
-    .transform((str) => new Date(str)),
-  licenceExpiryDate: z
-    .string()
-    .refine((value) => value.trim() !== "", {
-      message: "Expiry date required",
-    })
-    .refine((value, ctx) => {
-      return value > (ctx?.licenceIssueDate || "");
-    }, "Expiry date must be after issue date")
-    .transform((str) => new Date(str)),
+    }, "Licence number is required"),
+    licenceIssueDate: z
+      .string()
+      .refine((value) => value.trim() !== "", {
+        message: "Issue date required",
+      })
+      .transform((str) => new Date(str)),
+    licenceExpiryDate: z
+      .string()
+      .refine((value) => value.trim() !== "", {
+        message: "Expiry date required",
+      })
+      .refine((value, ctx) => {
+        return value > (ctx?.licenceIssueDate || "");
+      }, "Expiry date must be after issue date")
+      .transform((str) => new Date(str)),
 
-  tcNo: z.string().refine((value) => value.trim() !== "", {
-    message: "TC number is required",
-  }),
-}).superRefine((data, ctx) => {
-  if (data.email && !/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(data.email)) {
-    ctx.addIssue({
-      path: ["email"],
-      message: "Invalid email format",
-    });
-  }
-});
+    tcNo: z.string().refine((value) => value.trim() !== "", {
+      message: "TC number is required",
+    }),
+  })
+  .superRefine((data, ctx) => {
+    if (data.email && !/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(data.email)) {
+      ctx.addIssue({
+        path: ["email"],
+        message: "Invalid email format",
+      });
+    }
+  });
 
 // Step 2 schema
 const step2Schema = z.object({
   email: z.string().optional(),
   customerEmiratesId: z.any().optional(),
+  // registrationCard: z.array(z.any())
+  //   .min(1, { message: "registrationCard ID required" }),
   carDetails: carDetailsSchema.optional(),
   insuranceDetails: insuranceDetailsSchema.optional(),
 });
@@ -207,6 +221,9 @@ const JobCardPage = () => {
 
   const [carModelLists, setCarModelLists] = useState([]);
   const [carTrimLists, setCarTrimLists] = useState([]);
+
+  const [files, setFiles] = useState([]);
+  const [beforePhotosFiles, setBeforePhotosFiles] = useState([]);
 
   const [isEmiratesIdSet, setIsEmiratesIdSet] = useState(false);
 
@@ -301,13 +318,12 @@ const JobCardPage = () => {
   //   queryFn: () => getAllEmployee({ all: true }),
   // });
 
-  const InsuranseCompanyList = InsuranceCompaniesData?.data?.garageInsurance?.map(
-    (insuranse_compnay) => ({
+  const InsuranseCompanyList =
+    InsuranceCompaniesData?.data?.garageInsurance?.map((insuranse_compnay) => ({
       value: insuranse_compnay.companyName,
       label: insuranse_compnay.companyName,
       id: insuranse_compnay._id,
-    })
-  );
+    }));
 
   // const customersLists = customersData?.data?.customers?.map((customer) => ({
   //   value: customer._id,
@@ -336,15 +352,16 @@ const JobCardPage = () => {
       activeStep === 0
         ? step1Schema
         : activeStep === 1
-          ? step2Schema
-          : activeStep === 2
-            ? step3Schema
-            : activeStep === 3
-              ? step4Schema
-              : schema // default schema if none of the above conditions match
+        ? step2Schema
+        : activeStep === 2
+        ? step3Schema
+        : activeStep === 3
+        ? step4Schema
+        : schema // default schema if none of the above conditions match
     ),
     mode: "all",
   });
+  const aftrePhotosLists = watch("documents.policeReport");
   const beforePhotosList = watch("documents.beforePhotos");
   const selectedMake = useWatch({
     control,
@@ -354,6 +371,8 @@ const JobCardPage = () => {
     control,
     name: "carDetails.model",
   });
+
+
 
   const mutation = useMutation({
     mutationKey: ["addJobCard"],
@@ -432,15 +451,15 @@ const JobCardPage = () => {
           // Handle documents as binary files
           if (key === "documents") {
             if (
-              data?.documents?.policeReport &&
-              data?.documents?.policeReport?.length > 0
+              aftrePhotosLists &&
+              aftrePhotosLists?.length > 0
             ) {
-              formData.append(
-                "policeReport",
-                data?.documents?.policeReport?.[0]
-                  ? data?.documents?.policeReport?.[0]
-                  : ""
-              );
+              Array.from(aftrePhotosLists).forEach((photo) => {
+                formData.append(
+                  "policeReport",
+                  photo
+                );
+              });
             }
             if (beforePhotosList && beforePhotosList?.length > 0) {
               Array.from(beforePhotosList).forEach((photo) => {
@@ -624,6 +643,8 @@ const JobCardPage = () => {
     onSuccess: (res) => {
       toast.success("File uploaded successfully.");
       setEmiratesData(res);
+
+      console.log("uuuu:-", emiratesData);
       setLoadingoverlay(false);
     },
     onError: (error) => {
@@ -642,7 +663,12 @@ const JobCardPage = () => {
       typeof files[0] === "object"
     ) {
       const formData = new FormData();
-      formData.append("emiratesId", files[0]);
+
+      Array.from(files).forEach((photo) => {
+        formData.append("emiratesId", photo);
+      });
+
+
       extractEmiratesMutation.mutate(formData);
       setEmiratesApi(true);
     } else if (!files || files.length === 0) {
@@ -650,6 +676,8 @@ const JobCardPage = () => {
       setEmiratesApi(false);
     }
   };
+
+
   const handleDrivingIdData = (files) => {
     if (
       files &&
@@ -658,7 +686,11 @@ const JobCardPage = () => {
       typeof files[0] === "object"
     ) {
       const formData = new FormData();
-      formData.append("drivingLicense", files[0]);
+      Array.from(files).forEach((photo) => {
+        formData.append("drivingLicense", photo);
+      });
+
+      // formData.append("drivingLicense", files[0]);
       extractDrivingMutation.mutate(formData);
       setDrivingApi(true);
     } else if (!files || files.length === 0) {
@@ -674,7 +706,12 @@ const JobCardPage = () => {
       typeof files[0] === "object"
     ) {
       const formData = new FormData();
-      formData.append("registrationCard", files[0]);
+
+      Array.from(files).forEach((photo) => {
+        formData.append("registrationCard", photo);
+      });
+
+      // formData.append("registrationCard", files[0]);
       extractCarMutation.mutate(formData);
       setApiCalled(true);
     } else if (!files || files.length === 0) {
@@ -834,17 +871,24 @@ const JobCardPage = () => {
 
       // setValue("registrationCard", [carId?.registrationCard]);
       if (documents) {
-        if (documents?.beforePhotos?.[0]) {
-          setValue("documents.beforePhotos", documents.beforePhotos[0]);
+        if (documents?.beforePhotos) {
+          setValue("documents.beforePhotos", documents.beforePhotos);
         }
-        if (documents?.policeReport[0]) {
-          setValue("documents.policeReport", documents.policeReport[0]);
+        if (documents?.policeReport) {
+          setValue("documents.policeReport", documents.policeReport);
         }
       }
     }
   }, [jobcardData]);
 
   const { mutate, isLoading: UpdateLoading } = updatePostMutation;
+
+  const handleFileUpload = (uploadedFiles) => {
+    setFiles(uploadedFiles);
+  };
+  const handleBeforePhotoFileUpload = (uploadedFiles) => {
+    setBeforePhotosFiles(uploadedFiles);
+  };
 
   return (
     <div>
@@ -907,16 +951,15 @@ const JobCardPage = () => {
                                   >
                                     Emirates ID
                                   </Label>
+
                                   <Controller
                                     name="emiratesId"
                                     control={control}
-                                    rules={{
-                                      required: "Emirates ID is required",
-                                    }}
+
                                     render={({
                                       field: { onChange, value },
                                     }) => (
-                                      <FileUploaderMultiple
+                                      <FileUploaderMultipleFrontBack
                                         value={value}
                                         onChange={(files) => {
                                           onChange(files);
@@ -927,41 +970,46 @@ const JobCardPage = () => {
                                         errors={errors}
                                         width={150}
                                         height={150}
-                                        resetTrigger={resetTrigger}
+
                                       />
                                     )}
                                   />
                                 </div>
                               </div>
+
+
                               <div className="lg:w-[48%]">
-                                <Label
-                                  htmlFor="drivingId"
-                                  className="block mb-3 "
-                                >
-                                  Driving License
-                                </Label>
-                                <Controller
-                                  name="drivingId"
-                                  control={control}
-                                  rules={{
-                                    required: "Driving ID is required",
-                                  }}
-                                  render={({ field: { onChange, value } }) => (
-                                    <FileUploaderMultiple
-                                      value={value}
-                                      onChange={(files) => {
-                                        onChange(files);
-                                        handleDrivingIdData(files);
-                                      }}
-                                      height={150}
-                                      width={150}
-                                      textname="License"
-                                      name="drivingId"
-                                      errors={errors}
-                                      resetTrigger={resetTrigger}
-                                    />
-                                  )}
-                                />
+                                <div>
+                                  <Label
+                                    htmlFor="drivingId"
+                                    className="block mb-3 "
+                                  >
+                                    Driving License
+                                  </Label>
+
+                                  <Controller
+                                    name="drivingId"
+                                    control={control}
+
+                                    render={({
+                                      field: { onChange, value },
+                                    }) => (
+                                      <FileUploaderMultipleFrontBack
+                                        value={value}
+                                        onChange={(files) => {
+                                          onChange(files);
+                                          handleDrivingIdData(files);
+                                        }}
+                                        name="drivingId"
+                                        textname="License"
+                                        errors={errors}
+                                        width={150}
+                                        height={150}
+
+                                      />
+                                    )}
+                                  />
+                                </div>
                               </div>
                             </div>
                           </CardContent>
@@ -1213,13 +1261,12 @@ const JobCardPage = () => {
                                   <Controller
                                     name="registrationCard"
                                     control={control}
-                                    rules={{
-                                      required: "Registration Card is required",
-                                    }}
+
                                     render={({
                                       field: { onChange, value },
                                     }) => (
-                                      <FileUploaderMultiple
+
+                                      <FileUploaderMultipleFrontBack
                                         value={value}
                                         onChange={(files) => {
                                           onChange(files);
@@ -1230,11 +1277,28 @@ const JobCardPage = () => {
                                         errors={errors}
                                         width={150}
                                         height={150}
-                                        resetTrigger={resetTrigger}
+
                                       />
+
+
+
+
+                                      // <FileUploaderMultiple
+                                      //   value={value}
+                                      //   onChange={(files) => {
+                                      //     onChange(files);
+                                      //     handleCarRcIdData(files);
+                                      //   }}
+                                      //   name="registrationCard"
+                                      //   textname="Car RC"
+                                      //   errors={errors}
+                                      //   width={150}
+                                      //   height={150}
+                                      //   resetTrigger={resetTrigger}
+                                      // />
                                     )}
                                   />
-                                  {extractCarMutation.isLoading && (
+                                  {/* {extractCarMutation.isLoading && (
                                     <p>Loading...</p>
                                   )}
                                   {extractCarMutation.isError && (
@@ -1244,7 +1308,7 @@ const JobCardPage = () => {
                                   )}
                                   {extractCarMutation.isSuccess && (
                                     <p>File uploaded successfully.</p>
-                                  )}
+                                  )} */}
                                 </div>
                               </div>
                             </div>
@@ -1557,13 +1621,13 @@ const JobCardPage = () => {
                                   </div>
                                   {errors?.insuranceDetails
                                     ?.currentInsurance && (
-                                      <div className="text-destructive mt-2">
-                                        {
-                                          errors?.insuranceDetails
-                                            ?.currentInsurance.message
-                                        }
-                                      </div>
-                                    )}
+                                    <div className="text-destructive mt-2">
+                                      {
+                                        errors?.insuranceDetails
+                                          ?.currentInsurance.message
+                                      }
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                               {/* <div className="w-full space-y-4">
@@ -1621,13 +1685,13 @@ const JobCardPage = () => {
                                   </div>
                                   {errors?.insuranceDetails
                                     ?.insuranceExpiryDate && (
-                                      <div className="text-destructive mt-2">
-                                        {
-                                          errors?.insuranceDetails
-                                            ?.insuranceExpiryDate.message
-                                        }
-                                      </div>
-                                    )}
+                                    <div className="text-destructive mt-2">
+                                      {
+                                        errors?.insuranceDetails
+                                          ?.insuranceExpiryDate.message
+                                      }
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -1746,7 +1810,7 @@ const JobCardPage = () => {
                             <div className="flex flex-col flex-wrap gap-4 w-full lg:w-[45%] justify-between">
                               <div className="w-full space-y-4">
                                 <div className="w-full lg:w-full">
-                                  <div>
+                                  {/* <div>
                                     <Label htmlFor="documents.policeReport">
                                       Police Report Upload
                                     </Label>
@@ -1812,7 +1876,28 @@ const JobCardPage = () => {
                                         ))}
                                       </div>
                                     )}
-                                  </div>
+                                  </div> */}
+                                  <Label htmlFor="documents.policeReport">
+                                    Police Report Upload
+                                  </Label>
+                                  <Controller
+                                    name="documents.policeReport"
+                                    control={control}
+                                    rules={{
+                                      required: "Police report is required",
+                                    }}
+                                    render={({
+                                      field: { onChange, value },
+                                    }) => (
+                                      <DropZone
+                                        onFileUpload={handleFileUpload}
+                                        value={value}
+                                        onChange={onChange}
+                                        errors={errors?.documents?.policeReport}
+                                        pdf={true}
+                                      />
+                                    )}
+                                  />
                                 </div>
                               </div>
                             </div>
@@ -1883,7 +1968,24 @@ const JobCardPage = () => {
                                     <Label htmlFor="documents.beforePhotos">
                                       Upload Photo
                                     </Label>
-                                    <div className="flex gap-2 w-full">
+                                    <Controller
+                                    name="documents.beforePhotos"
+                                    control={control}
+                                    rules={{
+                                      required: "Before Photo is required",
+                                    }}
+                                    render={({
+                                      field: { onChange, value },
+                                    }) => (
+                                      <DropZone
+                                        onFileUpload={handleBeforePhotoFileUpload}
+                                        value={value}
+                                        onChange={onChange}
+                                        errors={errors?.documents?.beforePhotos}
+                                      />
+                                    )}
+                                  />
+                                    {/* <div className="flex gap-2 w-full">
                                       <Input
                                         type="file"
                                         {...register("documents.beforePhotos")}
@@ -1907,24 +2009,25 @@ const JobCardPage = () => {
                                     )}
                                     {jobcardData?.documents?.beforePhotos
                                       ?.length > 0 && (
-                                        <div className="mt-2 grid grid-cols-3 gap-2">
-                                          {jobcardData?.documents?.beforePhotos?.map(
-                                            (photo, index) => (
-                                              <div
-                                                key={index}
-                                                className="relative"
-                                              >
-                                                <img
-                                                  src={photo}
-                                                  alt={`File Preview ${index + 1
-                                                    }`}
-                                                  className="w-32 h-32 object-cover"
-                                                />
-                                              </div>
-                                            )
-                                          )}
-                                        </div>
-                                      )}
+                                      <div className="mt-2 grid grid-cols-3 gap-2">
+                                        {jobcardData?.documents?.beforePhotos?.map(
+                                          (photo, index) => (
+                                            <div
+                                              key={index}
+                                              className="relative"
+                                            >
+                                              <img
+                                                src={photo}
+                                                alt={`File Preview ${
+                                                  index + 1
+                                                }`}
+                                                className="w-32 h-32 object-cover"
+                                              />
+                                            </div>
+                                          )
+                                        )}
+                                      </div>
+                                    )}
 
                                     {filePreviews1?.length > 0 && (
                                       <div className="mt-2 grid grid-cols-3 gap-2">
@@ -1936,8 +2039,9 @@ const JobCardPage = () => {
                                             >
                                               <img
                                                 src={preview}
-                                                alt={`File Preview ${index + 1
-                                                  }`}
+                                                alt={`File Preview ${
+                                                  index + 1
+                                                }`}
                                                 className="w-32 h-32 object-cover"
                                               />
                                               <button
@@ -1953,7 +2057,7 @@ const JobCardPage = () => {
                                           )
                                         )}
                                       </div>
-                                    )}
+                                    )} */}
                                   </div>
                                 </div>
                               </div>

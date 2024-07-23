@@ -65,3 +65,16 @@ export const getHistoryList = async ({ jobCardId = "" }) => {
       return error.response.data;
     }
   };
+
+
+
+  ///my task new job card
+
+  export const getJobCardsMyTaskList = async ({ page = 1, size = 10, all = false, search = "", status = "", startDate = "", endDate = "" }) => {
+    try {
+        const response = await AxiosCreator.get(`/api/my-task/job-card?page=${page}&size=${size}&all=${all}&search=${search}&status=${status}&startDate=${startDate}&endDate=${endDate}`);
+        return response.data;
+    } catch (error) {
+        return error.response.data;
+    }
+}

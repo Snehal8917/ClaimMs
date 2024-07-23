@@ -1,22 +1,10 @@
 "use client";
 import * as React from "react";
 
-import {
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import { X } from "lucide-react";
-import { DataTableToolbar } from "./data-table-toolbar";
 import DatePickerWithRange from "@/components/date-picker-with-range";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -25,10 +13,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import Select from "react-select";
+import {
+  flexRender,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import { X } from "lucide-react";
 import { DataTablePagination } from "./data-table-pagination";
-import TableSkeleton from './TableSkeleton'
-import { Checkbox } from "@/components/ui/checkbox";
+import { DataTableToolbar } from "./data-table-toolbar";
+import TableSkeleton from "./TableSkeleton";
 
 export function BasicDataTable({
   data,
@@ -55,8 +53,10 @@ export function BasicDataTable({
   hiddenFilter = false,
   handleViewClick,
   rowClickable = false,
-  showCheckbox  = false,
-  handleDeleteSelected= false,
+  showCheckbox = false,
+  selectedRows,
+  setSelectedRows,
+  handleDeleteSelected = false,
 }) {
   const [sorting, setSorting] = React.useState([]);
   const [columnFilters, setColumnFilters] = React.useState([]);
@@ -64,7 +64,6 @@ export function BasicDataTable({
   const [rowSelection, setRowSelection] = React.useState({});
   const [dateRange, setDateRange] = React.useState({ from: "", to: "" });
   const [selectedRowId, setSelectedRowId] = React.useState(null);
-  const [selectedRows, setSelectedRows] = React.useState([]);
 
   const handleDateRangeChange = ({ from = null, to = null } = {}) => {
     if (from === null && to === null) {
@@ -139,7 +138,9 @@ export function BasicDataTable({
   };
 
   const handleSelectAll = (checked) => {
-    setSelectedRows(checked ? table.getRowModel().rows.map((row) => row.id) : []);
+    setSelectedRows(
+      checked ? table.getRowModel().rows.map((row) => row.id) : []
+    );
   };
 
   return (
@@ -158,7 +159,6 @@ export function BasicDataTable({
             <>
               <DataTableToolbar table={table} />
               <DatePickerWithRange
-                // className="mb-4"
                 onSelectDateRange={handleDateRangeChange}
                 selectedDateRange={dateRange}
               />
@@ -193,7 +193,8 @@ export function BasicDataTable({
                     <TableHead>
                       <Checkbox
                         checked={
-                          selectedRows.length === table.getRowModel().rows.length
+                          selectedRows.length ===
+                          table.getRowModel().rows.length
                         }
                         onCheckedChange={handleSelectAll}
                       />
@@ -246,7 +247,10 @@ export function BasicDataTable({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
                     No results.
                   </TableCell>
                 </TableRow>

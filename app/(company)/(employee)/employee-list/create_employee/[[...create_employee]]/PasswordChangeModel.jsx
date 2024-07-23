@@ -121,13 +121,13 @@ const PasswordChangeModal = ({ onClose, onSubmit }) => {
               </Button>
             </div>
           </form>
-          <DialogFooter className="sm:justify-center">
+          {/* <DialogFooter className="sm:justify-center">
             <DialogClose asChild>
               <Button variant="soft" color="destructive">
                 Close
               </Button>
             </DialogClose>
-          </DialogFooter>
+          </DialogFooter> */}
         </DialogContent>
       </Dialog>
     </div>

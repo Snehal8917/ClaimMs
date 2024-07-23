@@ -112,7 +112,14 @@ export const quotationFormSchemaSection = z.object({
       ),
       price: z.string().refine((value) => value.trim() !== "", {
         message: "price is required",
-      }),
+      }).refine(
+        (value) => {
+          return /^\d+(\.\d{1,2})?$/.test(value);
+        },
+        {
+          message: "valid price",
+        }
+      ),
     })
   ),
 

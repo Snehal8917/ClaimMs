@@ -8,6 +8,7 @@ import {
   Employees,
   Diamond,
   ClipBoard2,
+  TaskList
 } from "@/components/svg";
 
 export const menusConfig = {
@@ -17,11 +18,38 @@ export const menusConfig = {
         isHeader: true,
         title: "menu",
       },
+
       {
         title: "Dashboard",
         icon: DashBoard,
         href: "/dashboard",
         role: ["superAdmin", "company", "employee"],
+      },
+      {
+        title: "My Task",
+        icon: TaskList,
+        role: ["company", "employee"],
+        child: [
+          {
+            title: "New Jobcards",
+            href: "/my-task/new-jobcard-list",
+            icon: ClipBoard,
+            role: ["company", "employee"],
+          },
+          {
+            title: "New Claims",
+            href: "/my-task/claim-list",
+            icon: ClipBoard,
+            role: ["company", "employee"],
+          },
+          {
+            title: "New Quotations",
+            href: "/my-task/new-quotations",
+            icon: ClipBoard,
+            role: ["company", "employee"],
+          },
+
+        ],
       },
       {
         title: "Employees",

@@ -25,10 +25,10 @@ export const getCustomerList = async ({ page = 1, size = 10, all = false, search
   }
 };
 
-export const deleteCustomer = async (id) => {
+export const deleteCustomer = async (ids) => {
   try {
     // const response = await AxiosCreator.get("/api/admin/company-list");
-    const response = await AxiosCreator.delete(`/api/customer/delete/${id}`);
+    const response = await AxiosCreator.post(`/api/customer/delete`,ids);
 
     return response;
   } catch (error) {

@@ -133,7 +133,8 @@ const SectionAddItem = ({
                             <Button
                               className="border-default-300"
                               size="icon"
-                              variant="outline"
+                              // variant=""
+                              color="destructive"
                               type="button"
                               title="Remove"
                               onClick={() => handleRemoveSection(index)}
@@ -147,7 +148,7 @@ const SectionAddItem = ({
                           <Button
                             className="border-default-300"
                             size="icon"
-                            variant="outline"
+                            // variant="outline"
                             type="button"
                             title="Add Item"
                             disabled={!allFieldsFilled}
@@ -162,7 +163,8 @@ const SectionAddItem = ({
                       <Button
                         className="border-default-300 mt-5"
                         size="icon"
-                        variant="outline"
+                        // variant="outline"
+                        color="destructive"
                         type="button"
                         title="Remove"
                         onClick={() => handleRemoveSection(index)}
@@ -232,9 +234,10 @@ const SectionAddItem = ({
                                   <div className="flex justify-center items-center gap-2">
                                     {itemIndex != 0 && (
                                       <Button
-                                        className="border-default-300"
+                                        className="shadow-md"
                                         size="icon"
                                         variant="outline"
+                                        color="destructive" 
                                         type="button"
                                         title="Remove"
                                         onClick={() =>
@@ -243,34 +246,38 @@ const SectionAddItem = ({
                                       >
                                         <Icon
                                           icon="heroicons:trash"
-                                          className="w-5 h-5 text-default-300"
+                                          className="w-5 h-5 "
+                                         
                                         />
                                       </Button>
                                     )}
                                     <Button
-                                      className="border-default-300"
+                                       className="shadow-md"
                                       size="icon"
                                       variant="outline"
+                                      color="default" 
                                       type="button"
                                       title="Add Item"
                                       onClick={() => handleAddItem()}
                                     >
-                                      <FiPlus className="w-5 h-5 text-default-300" />
+                                      <FiPlus className="w-5 h-5" />
                                     </Button>
                                   </div>
                                 </>
                               ) : (
                                 <Button
-                                  className="border-default-300"
+                                  
+                                  className="shadow-md"
                                   size="icon"
                                   variant="outline"
+                                  color="destructive" 
                                   type="button"
                                   title="Remove"
                                   onClick={() => handleRemoveItem(itemIndex)}
                                 >
                                   <Icon
                                     icon="heroicons:trash"
-                                    className="w-5 h-5 text-default-300"
+                                    className="w-5 h-5"
                                   />
                                 </Button>
                               )}

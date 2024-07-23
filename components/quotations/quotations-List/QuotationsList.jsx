@@ -15,7 +15,7 @@ import {
   deleteQuotation,
   getAllQuotation,
   updateQuotation,
-} from "../../../action/quotationAction/quotation-action";
+} from "@/action/quotationAction/quotation-action";
 import { getUserMeAction } from "@/action/auth-action";
 import {
   Tooltip,
@@ -257,15 +257,15 @@ const QuotationsList = () => {
         const statusBtn = row?.original?.status;
         const isLatestQuotation = row?.original?.isLatestQuotation;
         const designation = userData?.data?.userId?.designation;
-        const isEditable = userData?.data?.userId?.designation == "Surveyor" || userData.data.userId.role == "company"
-        const isSupplmenteryQuotation=row?.original?.isSupplmenteryQuotation;
+        const isEditable = userData?.data?.userId?.designation == "Surveyor" || userData?.data?.userId?.role == "company"
+        const isSupplmenteryQuotation = row?.original?.isSupplmenteryQuotation;
         return (
           <div className="flex gap-3 items-center justify-center">
             {designation === "CSR" ? (
               <></>
             ) : (
               <>
-                
+
                 {statusBtn === "Declined" && isLatestQuotation && !isSupplmenteryQuotation && (
                   <>
                     <Button

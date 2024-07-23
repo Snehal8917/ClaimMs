@@ -5,6 +5,7 @@ import * as HoverCard from "@radix-ui/react-hover-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 import CollapsedHoverMenu from "./collapsed-hover-menu";
+import { Badge } from "@/components/ui/badge";
 
 const SubMenuHandler = ({
   item,
@@ -63,6 +64,15 @@ const SubMenuHandler = ({
               <item.icon className="w-5 h-5" />
             </span>
             <div className=" ">{translate(title, trans)}</div>
+            {/* {title && title === "My Task" && (
+              <Badge
+                color="destructive"
+                className=" w-5 h-5 p-0  items-center justify-center ml-6"
+              >
+                1
+              </Badge>
+            )} */}
+            {/* <div className=" ">{translate(title, trans)}</div> */}
           </div>
           <div className="flex-0">
             <div

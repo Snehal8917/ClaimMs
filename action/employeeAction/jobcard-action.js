@@ -4,6 +4,7 @@ import {
   getHistoryList,
   getJobCardById,
   getJobCardsList,
+  getJobCardsMyTaskList,
   updateJobCardById
 } from "../../config/companyConfig/jobcard.config";
 
@@ -54,3 +55,10 @@ export const getHistoryAction = async ({ jobCardId = "" }) => {
   const response = await getHistoryList({ jobCardId });
   return response;
 }
+
+
+//my task jobcard new
+export const getJobCardMyTaskListAction = async ({ page = 1, size = 10, all = false, search = "", status = "", startDate = "", endDate = "" }) => {
+  const response = await getJobCardsMyTaskList({ page, size, all, search, status, startDate, endDate });
+  return response;
+};

@@ -5,6 +5,7 @@ export { default as SemiBoxSvg } from "./layout/semibox.svg";
 //  dual tone icon
 
 export { default as DSearch } from "./duel-tone/dsearch.svg";
+export { default as TaskList } from "./duel-tone/task-svgrepo-com.svg";
 export { default as Cars } from "./duel-tone/car-svgrepo-com.svg";
 export { default as Employees } from "./duel-tone/employees-svgrepo-com (2).svg";
 export { default as Session } from "./home/session.svg";

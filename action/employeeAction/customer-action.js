@@ -16,8 +16,8 @@ export const getCustomerListAction = async ({ page = 1, size = 10, all = false, 
   return response;
 };
 
-export const deleteCustomerAction = async (id) => {
-  const response = await deleteCustomer(id);
+export const deleteCustomerAction = async (ids) => {
+  const response = await deleteCustomer(ids);
   return response;
 };
 

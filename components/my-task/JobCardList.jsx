@@ -1,5 +1,4 @@
 "use client";
-
 import BasicDataTable from "@/components/common/data-table/basic-table";
 import DialogPlacement from "@/components/common/dialog/dialog-placement";
 import { BreadcrumbItem, Breadcrumbs } from "@/components/ui/breadcrumbs";
@@ -27,7 +26,8 @@ import { useSession } from "next-auth/react";
 import { getUserMeAction } from "@/action/auth-action";
 import {
   getJobCardListAction,
-  updateJobCardAction
+  updateJobCardAction,
+  getJobCardMyTaskListAction
 } from "@/action/employeeAction/jobcard-action";
 import { Badge } from "@/components/ui/badge";
 import { DeleteJobCard } from "@/config/companyConfig/jobcard.config";
@@ -42,7 +42,7 @@ const statusOptions = [
   "Draft",
 ];
 const statusOptions2 = ["Pending", "In-Progress", "Approved", "Unpaid", "Paid"];
-const JobCardListPage = () => {
+const JobCardListMyTaskPage = () => {
   const { data: session } = useSession();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectJobCard, setselectJobCard] = useState(null);
@@ -430,10 +430,10 @@ const JobCardListPage = () => {
   };
 
   const { data, error, refetch } = useQuery({
-    queryKey: ["GetJobCardsList", pageIndex, pageSize, status],
+    queryKey: ["GetJobCardsMyTaskList", pageIndex, pageSize, status],
     queryFn: async () => {
       setTableLoading(true);
-      return getJobCardListAction({
+      return getJobCardMyTaskListAction({
         page: pageIndex + 1,
         size: pageSize,
         all: false,
@@ -474,6 +474,8 @@ const JobCardListPage = () => {
   const handleStartDateChange = (e) => setStartDate(e.target.value);
   const handleEndDateChange = (e) => setEndDate(e.target.value);
 
+console.log(data,"ruturutrut")
+
   const handleReset = () => {
     setStatus("");
     setStartDate("");
@@ -488,6 +490,7 @@ const JobCardListPage = () => {
       <div className="flex justify-between">
         <Breadcrumbs>
           <BreadcrumbItem>Menus</BreadcrumbItem>
+          <BreadcrumbItem>My Task</BreadcrumbItem>
           <BreadcrumbItem>Job Cards</BreadcrumbItem>
         </Breadcrumbs>
         <Button
@@ -554,4 +557,4 @@ const JobCardListPage = () => {
   );
 };
 
-export default JobCardListPage;
+export default JobCardListMyTaskPage;

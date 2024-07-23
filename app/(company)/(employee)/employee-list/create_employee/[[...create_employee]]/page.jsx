@@ -15,6 +15,7 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
+import { getInsuranceCompanies, getGarrageInsuranceCompanies } from "@/action/companyAction/insurance-action";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -30,6 +31,15 @@ import toast from "react-hot-toast";
 import Select from "react-select";
 import { z } from "zod";
 
+
+const styles = {
+  option: (provided, state) => ({
+    ...provided,
+    fontSize: "14px",
+  }),
+};
+
+
 const commonSchema = z.object({
   value: z.string().nonempty({ message: "Value is required." }),
   label: z.string().nonempty({ message: "Label is required." }),
@@ -42,6 +52,7 @@ const employeeSchema = z
     firstName: z.string().min(1, { message: "First Name is required." }),
     lastName: z.string().min(1, { message: "Last Name is required." }),
     email: z.string().email({ message: "Your email is invalid." }),
+    assignInsuranceCompanys: z.array(z.any()).optional(),
     password: z
       .string()
       .min(1, { message: "Create password is required." })
@@ -59,7 +70,15 @@ const employeeSchema = z
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match.",
     path: ["confirmPassword"], // Specify which field to add the error to
+  }).superRefine((data, ctx) => {
+    if (data.designation?.value === "Surveyor" && (!data.assignInsuranceCompanys || data.assignInsuranceCompanys.length === 0)) {
+      ctx.addIssue({
+        path: ["assignInsuranceCompanys"],
+        message: "Insurance company required!",
+      });
+    }
   });
+
 
 ///
 
@@ -68,8 +87,16 @@ const employeeSchemaUpdate = z.object({
   lastName: z.string().min(1, { message: "Last Name is required." }),
   email: z.string().email({ message: "Your email is invalid." }),
   designation: commonSchema,
+  assignInsuranceCompanys: z.array(z.any()).optional(),
   avatar: z.any().optional(),
   // avatar: z.array(z.any()).nonempty({ message: "Avatar is required" }),
+}).superRefine((data, ctx) => {
+  if (data.designation?.value === "Surveyor" && (!data.assignInsuranceCompanys || data.assignInsuranceCompanys.length === 0)) {
+    ctx.addIssue({
+      path: ["assignInsuranceCompanys"],
+      message: "Insurance company required!",
+    });
+  }
 });
 //
 
@@ -106,6 +133,7 @@ const EmployeePage = () => {
     control,
     setValue,
     formState: { errors },
+    watch
   } = useForm({
     resolver: zodResolver(employeeId ? employeeSchemaUpdate : employeeSchema),
     mode: "all",
@@ -140,7 +168,12 @@ const EmployeePage = () => {
         avatar,
         permissionId,
         designation,
+        assignInsuranceCompanys,
       } = employeeData;
+
+
+
+
       setValue("firstName", firstName);
       setValue("lastName", lastName);
       setValue("city", city);
@@ -149,6 +182,7 @@ const EmployeePage = () => {
       setValue("mobileNumber", mobileNumber);
       setValue("email", email);
       setValue("designation", designation);
+      setValue("assignInsuranceCompanys", assignInsuranceCompanys);
       if (avatar) {
         setValue("avatar", [avatar]);
       }
@@ -171,12 +205,16 @@ const EmployeePage = () => {
     mutationKey: ["addEmployee"],
     mutationFn: async (data) => {
       const formData = new FormData();
+      formData.append(`assignInsuranceCompanys`, JSON.stringify(data.assignInsuranceCompanys));
       for (const key in data) {
+
         if (key === "avatar" && data[key] && data[key][0]) {
           formData.append(key, data[key][0]);
-        } else if (key === "permission") {
+        }
+        else if (key === "permission") {
           formData.append(key, JSON.stringify(data[key]));
-        } else {
+        } else if (key !== "assignInsuranceCompanys") {
+          // Avoid re-adding assignInsuranceCompanys
           formData.append(key, data[key]);
         }
       }
@@ -188,7 +226,7 @@ const EmployeePage = () => {
       router.push("/employee-list");
     },
     onError: (error) => {
-      console.log(error?.data?.message, "errorrrrrrrr");
+
       toast.error(
         error?.data?.message || "Account with that email address already exists"
       );
@@ -198,12 +236,17 @@ const EmployeePage = () => {
   const updatePostMutation = useMutation({
     mutationFn: async (data) => {
       const formData = new FormData();
+
+      formData.append(`assignInsuranceCompanys`, JSON.stringify(data.assignInsuranceCompanys));
+
+
       for (const key in data) {
         if (key === "avatar" && data[key] && data[key][0]) {
           formData.append(key, data[key][0]);
         } else if (key === "permission") {
           formData.append(key, JSON.stringify(data[key]));
-        } else {
+        } else if (key !== "assignInsuranceCompanys") {
+          // Avoid re-adding assignInsuranceCompanys
           formData.append(key, data[key]);
         }
       }
@@ -226,7 +269,7 @@ const EmployeePage = () => {
     },
   });
 
-  console.log(errors, "dfdfdfdfdfdfdfdfdf");
+
   const handleSwitchChange = (category, type) => {
     setPermission((prev) => {
       const newPermission = {
@@ -264,7 +307,7 @@ const EmployeePage = () => {
   };
 
   const onSubmit = (data) => {
-    console.log(data.designation.value, "datadesignation");
+
     data.designation = data.designation.value;
     data.permission = permission;
     if (employeeId) {
@@ -300,6 +343,28 @@ const EmployeePage = () => {
       },
     });
   };
+
+  //ay
+
+  const designation = watch("designation");
+
+
+
+  const { data: InsuranceCompaniesData } = useQuery({
+    queryKey: ["getInsuranceCompanies"],
+    queryFn: () =>
+      getGarrageInsuranceCompanies({
+        all: true,
+      }),
+  });
+
+  const InsuranseCompanyList = InsuranceCompaniesData?.data?.garageInsurance?.map(
+    (insuranse_compnay) => ({
+      value: insuranse_compnay._id,
+      label: insuranse_compnay.companyName,
+    })
+  );
+
 
   return (
     <>
@@ -411,9 +476,9 @@ const EmployeePage = () => {
                         defaultValue={
                           employeeData
                             ? DesignationList.find(
-                                (item) =>
-                                  item.value === employeeData.designation
-                              )
+                              (item) =>
+                                item.value === employeeData.designation
+                            )
                             : DesignationList[0]
                         }
                         render={({ field: { onChange, value } }) => (
@@ -482,6 +547,38 @@ const EmployeePage = () => {
                         )}
                       </div>
                     )}
+
+                    {designation?.value === "Surveyor" && (
+                      <div className="w-full lg:w-[48%] space-y-2">
+                        <Label htmlFor="assignInsuranceCompanys"> Insurance Company</Label>
+                        <Controller
+                          name="assignInsuranceCompanys"
+                          control={control}
+                          render={({ field: { onChange, value } }) => (
+                            <Select
+                              className="react-select w-full"
+                              isMulti
+                              classNamePrefix="select"
+                              id="assignInsuranceCompanys"
+                              styles={styles}
+                              options={InsuranseCompanyList}
+                              onChange={(selectedOptions) => {
+                                onChange(selectedOptions ? selectedOptions.map(option => option.value) : []);
+                              }}
+                              value={InsuranseCompanyList?.filter(
+                                (option) => value?.includes(option.value)
+                              )}
+                            />
+                          )}
+                        />
+                        {errors.assignInsuranceCompanys && (
+                          <div className="text-red-500 mt-2">
+                            {errors.assignInsuranceCompanys.message}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
 
                     <div className="w-full flex flex-col lg:flex-row gap-4">
                       <div className="w-full lg:w-[48%] space-y-2">

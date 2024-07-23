@@ -38,10 +38,10 @@ const ProfileInfo = () => {
   });
 
   const companyName = userData?.data?.userId?.companyName;
+  const role = userData?.data?.userId?.role;
   const avatar = userData?.data?.userId?.avatar;
   const userEmail = userData?.data?.userId?.email;
 
-  console.log("userData", companyName);
 
   const getRedirectPathProfile = () => {
     if (status === "authenticated" && session) {
@@ -161,33 +161,38 @@ const ProfileInfo = () => {
             </Link>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator className="dark:bg-background" />
-        <DropdownMenuGroup>
-          {[
-            {
-              name: "profile",
-              icon: "heroicons:user",
-              href: redirectPath,
-            },
-            {
-              name: "Settings",
-              icon: "heroicons:paper-airplane",
-              // href: "/user-profile/settings",
-              href: redirectSettingPath,
-            },
-          ].map((item, index) => (
-            <Link
-              href={item.href}
-              key={`info-menu-${index}`}
-              className="cursor-pointer"
-            >
-              <DropdownMenuItem className="flex items-center gap-2 text-sm font-medium text-default-600 capitalize px-3 py-1.5 dark:hover:bg-background cursor-pointer">
-                <Icon icon={item.icon} className="w-4 h-4" />
-                {item.name}
-              </DropdownMenuItem>
-            </Link>
-          ))}
-        </DropdownMenuGroup>
+        {role !== "superAdmin" && (
+          <>
+            <DropdownMenuSeparator className="dark:bg-background" />
+            <DropdownMenuGroup>
+              {[
+                {
+                  name: "profile",
+                  icon: "heroicons:user",
+                  href: redirectPath,
+                },
+                {
+                  name: "Settings",
+                  icon: "heroicons:paper-airplane",
+                  // href: "/user-profile/settings",
+                  href: redirectSettingPath,
+                },
+              ].map((item, index) => (
+                <Link
+                  href={item.href}
+                  key={`info-menu-${index}`}
+                  className="cursor-pointer"
+                >
+                  <DropdownMenuItem className="flex items-center gap-2 text-sm font-medium text-default-600 capitalize px-3 py-1.5 dark:hover:bg-background cursor-pointer">
+                    <Icon icon={item.icon} className="w-4 h-4" />
+                    {item.name}
+                  </DropdownMenuItem>
+                </Link>
+              ))}
+            </DropdownMenuGroup>
+          </>
+        )}
+
         <DropdownMenuSeparator className="mb-0 dark:bg-background" />
         <DropdownMenuItem
           onClick={() => handleLogout()}

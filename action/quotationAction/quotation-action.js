@@ -11,6 +11,7 @@ import {
   getAdQuotationAll,
   updateAdQuotationeById,
   updateSpQuotationeById,
+  getQuotationMyTask,
 } from "../../config/quotationConfig/quotation.config";
 
 export const addQuotation = async (data) => {
@@ -103,5 +104,19 @@ export const updateAdQuotation = async (id, updatedFields) => {
 ///
 export const updateSpQuotation = async (id, updatedFields) => {
   const response = await updateSpQuotationeById(id, updatedFields);
+  return response;
+};
+
+
+//my task
+
+export const getAllQuotationMyTask = async ({
+  page = 1,
+  size = 10,
+  all = false,
+  search = "",
+  jobCardId = "",
+}) => {
+  const response = await getQuotationMyTask({ page, size, all, search, jobCardId });
   return response;
 };
