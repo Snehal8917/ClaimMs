@@ -50,7 +50,7 @@ const CarView = ({ jobcardData }) => {
             </CardHeader>
             <CardContent className="flex flex-wrap gap-4 justify-between w-full">
               <div className="w-full flex flex-wrap justify-between gap-4">
-                <div className="w-full lg:w-[48%] space-y-4">
+                <div className="w-full md:w-[48%] lg:w-[48%] space-y-4">
                   <div className="">
                     <Label htmlFor="fullName" className="font-bold">
                       Chassis No
@@ -83,7 +83,7 @@ const CarView = ({ jobcardData }) => {
                   </div>
                 </div>
 
-                <div className="w-full lg:w-[48%] space-y-4">
+                <div className="w-full md:w-[48%] lg:w-[48%] space-y-4">
                   <div>
                     <Label htmlFor="licenceNo" className="font-bold">
                       Plate Number

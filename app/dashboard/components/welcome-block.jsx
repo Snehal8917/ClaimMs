@@ -71,7 +71,7 @@ const WelcomeBlock = ({ data, session }) => {
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
-      className="w-full h-full bg-primary rounded-md flex p-6 relative shadow-lg"
+      className="w-full h-full bg-primary rounded-md flex flex-col md:flex-row p-6 relative shadow-lg"
     >
       <div className="flex-1">
         <motion.div
@@ -90,7 +90,7 @@ const WelcomeBlock = ({ data, session }) => {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1, duration: 0.5 }}
-              className="flex items-center w-full max-w-[130px] p-3 rounded bg-white shadow-md"
+              className="flex items-center w-full max-w-[130px] sm:w-[48%] md:w-[30%] lg:w-[44%] p-3 rounded bg-white shadow-md"
             >
               <div className="flex-1">
                 <div className="text-xs font-semibold text-gray-700">
@@ -109,7 +109,7 @@ const WelcomeBlock = ({ data, session }) => {
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.4, duration: 0.5 }}
-        className="absolute bottom-0 ltr:right-4 rtl:left-4 ltr:md:right-[30%] rtl:md:left-[30%] ltr:md:bottom-5 ltr:2xl:right-10 rtl:2xl:left-10 w-[100px]"
+        className="absolute bottom-0 ltr:right-4 rtl:left-4 md:relative md:bottom-auto md:ltr:right-auto md:rtl:left-auto md:self-end md:w-[150px] w-[100px]"
       >
         <Image src={admin} alt="user" className="w-full h-full object-cover" />
       </motion.div>

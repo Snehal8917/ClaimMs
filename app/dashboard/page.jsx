@@ -34,7 +34,7 @@ const ProjectPageView = ({ trans }) => {
   } = useQuery({
     queryKey: ["userMe"],
     queryFn: () => getUserMeAction(session.jwt),
-    enabled: !!session?.jwt, // Only run the query if the token is available
+    enabled: !!session?.jwt,
   });
 
   useEffect(() => {
@@ -49,16 +49,16 @@ const ProjectPageView = ({ trans }) => {
           : ""
       );
     }
-  }, [status, session]);
+  }, [status, session, userData]);
+
   const role = session?.role;
   const isEmployee = role === "employee";
   const isCompany = role === "company";
 
   const PERMISSION_CREATE_JOBCARD =
-  userData?.data?.userId?.permissionId?.jobCard?.create;
+    userData?.data?.userId?.permissionId?.jobCard?.create;
 
   const CREATED_USER_ROLE = userData?.data?.userId?.designation;
-
 
   const {
     data: dashboardData,
@@ -137,7 +137,7 @@ const ProjectPageView = ({ trans }) => {
   };
 
   const canCreateJobCard =
-  (PERMISSION_CREATE_JOBCARD && isEmployee && CREATED_USER_ROLE === "CSR");
+    PERMISSION_CREATE_JOBCARD && isEmployee && CREATED_USER_ROLE === "CSR";
 
   const xAxisLabels = generateXAxisLabels(selectedTab);
   const chartData =
@@ -147,24 +147,24 @@ const ProjectPageView = ({ trans }) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center flex-wrap justify-between gap-4">
+      <div className="flex flex-col md:flex-row items-center flex-wrap justify-between gap-4">
         <div className="text-2xl font-medium text-default-800">
           Dashboard {title}
         </div>
         <div className="flex justify-center items-center gap-4">
-        <Button
-          asChild
-          className={`${canCreateJobCard ? "" : "disable cursor-not-allowed"}`}
-        >
-          {canCreateJobCard ? (
-            <Link href="/job-card/create">
-              <Plus className="w-5 h-5 ltr:mr-2 rtl:ml-2" />
-              Open Job Card
-            </Link>
-          ) : (
-            <> </>
-          )}
-        </Button>
+          <Button
+            asChild
+            className={`${canCreateJobCard ? "" : "disable cursor-not-allowed"}`}
+          >
+            {canCreateJobCard ? (
+              <Link href="/job-card/create">
+                <Plus className="w-5 h-5 ltr:mr-2 rtl:ml-2" />
+                Open Job Card
+              </Link>
+            ) : (
+              <> </>
+            )}
+          </Button>
           <Button
             className={getButtonClassName("today")}
             variant="outline"
@@ -202,10 +202,10 @@ const ProjectPageView = ({ trans }) => {
       </div>
 
       <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-12 md:col-span-4 mt-10 md:mt-0">
+        <div className="col-span-12 md:col-span-12 lg:col-span-5">
           <WelcomeBlock data={dashboardData} session={session} />
         </div>
-        <div className="col-span-12 md:col-span-8">
+        <div className="col-span-12 md:col-span-12 lg:col-span-7">
           <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4">
             <ReportsCard data={dashboardData} session={session} />
           </div>
@@ -228,7 +228,7 @@ const ProjectPageView = ({ trans }) => {
               <BasicLineChart
                 data={chartData}
                 xAxisLabels={xAxisLabels}
-                selectedTab={selectedTab}  // Pass the selectedTab to the chart
+                selectedTab={selectedTab}
               />
             </CardContent>
           </Card>
@@ -239,7 +239,7 @@ const ProjectPageView = ({ trans }) => {
               <CardTitle>Repair</CardTitle>
             </CardHeader>
             <CardContent className="px-0 pb-8">
-              <TopBrowserChart dashboardData={dashboardData}/>
+              <TopBrowserChart dashboardData={dashboardData} />
             </CardContent>
           </Card>
         </div>

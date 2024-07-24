@@ -51,7 +51,6 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
   const isStatusEditable = ["In Progress","Approved", "Completed", "Re-Assigned"].includes(
     initialStatus
   );
-  // const isStatusEditable = initialStatus !== "Done";
 
   const formatDate = (isoDate) => {
     if (!isoDate) return "";
@@ -205,7 +204,7 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
               </CardHeader>
               <CardContent className="flex flex-wrap gap-4 justify-between w-full">
                 <div className="w-full flex flex-wrap justify-between gap-4">
-                  <div className="w-full lg:w-[48%] space-y-4">
+                  <div className="w-full lg:w-[48%] md:w-[48%] space-y-4">
                     <div className="">
                       <Label htmlFor="details" className="font-bold">
                         Notes
@@ -224,9 +223,9 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
                       </div>
                     </div>
                   </div>
-                  <div className="w-full lg:w-[48%] space-y-4  gap-4">
-                    <div className="flex gap-4 ">
-                      <div className="w-[20rem]">
+                  <div className="w-full md:w-[48%] lg:w-[48%]  space-y-4  gap-4">
+                    <div className="flex flex-wrap gap-4">
+                      <div className="w-full md:w-[48%] lg:w-[48%]">
                         <Label htmlFor="status">Status</Label>
                         <Controller
                           name="status"
@@ -249,7 +248,7 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
                           )}
                         />
                       </div>
-                      <div className="w-[20rem] mt-4">
+                      <div className="w-full md:w-[48%] lg:w-[48%] mt-4">
                         {hasStatusChanged && (
                           <Button
                             className="ml-auto"
@@ -262,13 +261,13 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
                       </div>
                     </div>
 
-                    <div className="w-full space-y-4 ">
+                    <div className="w-full space-y-4">
                       {hasStatusChanged &&
                         initialStatus !== "Done" &&
                         currentStatus === "Done" && (
                           <div>
                             <div className="flex w-full flex-col">
-                              <div className="w-[40rem]">
+                              <div className="w-full">
                                 <Label>Add After Photos</Label>
                                 <Controller
                                   name="afterPhotos"

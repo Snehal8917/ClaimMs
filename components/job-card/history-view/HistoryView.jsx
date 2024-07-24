@@ -113,7 +113,7 @@ const HistoryView = () => {
                     {item?.action}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right min-w-[7rem]">
                   {formatDateTime(item?.createdAt)}
                 </TableCell>
               </TableRow>
