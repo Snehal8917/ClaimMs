@@ -178,3 +178,25 @@ export const getQuotationMyTask = async ({
     throw error;
   }
 };
+
+//get task list
+
+
+
+export const getMyTaskListConfig = async ({
+  page = 1,
+  size = 10,
+  all = false,
+  search = "",
+  jobCardId = "",
+}) => {
+  try {
+    const response = await AxiosCreator.get(
+      `/api/my-tasks`
+    );
+
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

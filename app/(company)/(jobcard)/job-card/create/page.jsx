@@ -654,12 +654,11 @@ const JobCardPage = () => {
   });
 
   const handleEmirateData = (files) => {
-    // console.log(typeof files[0], files[0], "value inside value");
+   // console.log(typeof files[0], files, "value inside value");
 
     if (
       files &&
       files.length > 0 &&
-      !emiratesApi &&
       typeof files[0] === "object"
     ) {
       const formData = new FormData();
@@ -667,8 +666,6 @@ const JobCardPage = () => {
       Array.from(files).forEach((photo) => {
         formData.append("emiratesId", photo);
       });
-
-
       extractEmiratesMutation.mutate(formData);
       setEmiratesApi(true);
     } else if (!files || files.length === 0) {
@@ -682,7 +679,6 @@ const JobCardPage = () => {
     if (
       files &&
       files.length > 0 &&
-      !drivingApi &&
       typeof files[0] === "object"
     ) {
       const formData = new FormData();
@@ -702,7 +698,6 @@ const JobCardPage = () => {
     if (
       files &&
       files.length > 0 &&
-      !apiCalled &&
       typeof files[0] === "object"
     ) {
       const formData = new FormData();

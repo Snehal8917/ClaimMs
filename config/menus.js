@@ -28,29 +28,35 @@ export const menusConfig = {
       {
         title: "My Task",
         icon: TaskList,
-        role: ["company", "employee"],
-        child: [
-          {
-            title: "New Jobcards",
-            href: "/my-task/new-jobcard-list",
-            icon: ClipBoard,
-            role: ["company", "employee"],
-          },
-          {
-            title: "New Claims",
-            href: "/my-task/claim-list",
-            icon: ClipBoard,
-            role: ["company", "employee"],
-          },
-          {
-            title: "New Quotations",
-            href: "/my-task/new-quotations",
-            icon: ClipBoard,
-            role: ["company", "employee"],
-          },
-
-        ],
+        href: "/my-task/task-list",
+        role: ["superAdmin", "company", "employee"],
       },
+      // {
+      //   title: "My Task",
+      //   icon: TaskList,
+      //   role: ["company", "employee"],
+      //   child: [
+      //     {
+      //       title: "New Jobcards",
+      //       href: "/my-task/new-jobcard-list",
+      //       icon: ClipBoard,
+      //       role: ["company", "employee"],
+      //     },
+      //     {
+      //       title: "New Claims",
+      //       href: "/my-task/claim-list",
+      //       icon: ClipBoard,
+      //       role: ["company", "employee"],
+      //     },
+      //     {
+      //       title: "New Quotations",
+      //       href: "/my-task/new-quotations",
+      //       icon: ClipBoard,
+      //       role: ["company", "employee"],
+      //     },
+
+      //   ],
+      // },
       {
         title: "Employees",
         icon: Employees,

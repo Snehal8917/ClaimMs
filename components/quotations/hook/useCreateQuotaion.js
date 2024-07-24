@@ -26,6 +26,7 @@ export const useCreateQuotaion = ({ CsrList }) => {
   const supplementId = params?.supplementId;
 
   const customerCareRepresentative = CsrList[0]?.value || "";
+
   const {
     isLoading: isLoadingJobCardData,
     isError: isErrorJobCardData,
@@ -164,7 +165,7 @@ export const useCreateQuotaion = ({ CsrList }) => {
 
 
 
-  console.log(quotationData?.isSupplmenteryQuotation);
+ 
   const handleQuotationForm = async (values) => {
 
     setLoading(true);
@@ -420,7 +421,7 @@ export const useCreateQuotaion = ({ CsrList }) => {
         quInsuranceCom: "",
         quJobCard: "",
         qudaystocomplete: "",
-        quCustomerCareRepresentative: "",
+        quCustomerCareRepresentative:customerCareRepresentative,
         itemList: [{ itemName: "", itemPrice: "" }],
         sectionItems: [
           {

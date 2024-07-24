@@ -57,6 +57,7 @@ export function BasicDataTable({
   selectedRows,
   setSelectedRows,
   handleDeleteSelected = false,
+  jobCardId = false
 }) {
   const [sorting, setSorting] = React.useState([]);
   const [columnFilters, setColumnFilters] = React.useState([]);
@@ -122,10 +123,13 @@ export function BasicDataTable({
     table.resetColumnFilters();
   };
 
-  const handleRowClick = (row) => {
+  const handleRowClick = (e,row) => {
+    e.stopPropagation();
     setSelectedRowId(row.id);
-    if (rowClickable) {
+    if (rowClickable && !jobCardId) {
       handleViewClick(row.original._id);
+    } else if (rowClickable && jobCardId) {
+      handleViewClick(e,row.original.jobCardId);
     }
   };
 
@@ -145,7 +149,7 @@ export function BasicDataTable({
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="">
         <div className="flex items-center flex-wrap gap-2 px-4">
           {!hiddenOnly && (
             <Input
@@ -205,9 +209,9 @@ export function BasicDataTable({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -221,10 +225,10 @@ export function BasicDataTable({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    onClick={() => handleRowClick(row)}
-                    className={`${
-                      rowClickable ? "cursor-pointer" : ""
-                    } hover:bg-blue-100`}
+                    // onClick={() => handleRowClick(row)}
+                    onClick={(e) => handleRowClick(e, row)}
+                    className={`${rowClickable ? "cursor-pointer" : ""
+                      } hover:bg-blue-100`}
                   >
                     {showCheckbox && (
                       <TableCell>
