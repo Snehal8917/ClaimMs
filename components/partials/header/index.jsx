@@ -13,15 +13,13 @@ import NotificationMessage from "./notification-message";
 import { SocketContext } from "@/components/scoket/SocketConnection";
 import { toast as reToast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
+import ThemeButton from "./theme-button";
 const NavTools = ({ isDesktop, isMobile, sidebarType }) => {
-
-
   const { socket } = useContext(SocketContext);
-
-
 
   return (
     <div className="nav-tools flex items-center  gap-2">
+      {/* <ThemeButton /> */}
       <NotificationMessage />
       <div className="ltr:pl-2 rtl:pr-2">
         <ProfileInfo />
@@ -87,7 +85,7 @@ const Header = ({ handleOpenSearch, trans }) => {
             <div className="flex justify-between items-center h-full">
               <VerticalHeader
                 sidebarType={sidebarType}
-              // handleOpenSearch={handleOpenSearch}
+                // handleOpenSearch={handleOpenSearch}
               />
               <NavTools
                 isDesktop={isDesktop}

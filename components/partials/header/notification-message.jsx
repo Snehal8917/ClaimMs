@@ -73,9 +73,11 @@ const NotificationMessage = () => {
     };
 
     socket.on("notification", handleNotification);
+    socket.on("job-card:delayed", handleNotification);
 
     return () => {
       socket.off("notification", handleNotification);
+      socket.off("job-card:delayed", handleNotification);
     };
   }, [socket]);
 

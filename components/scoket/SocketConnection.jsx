@@ -33,6 +33,10 @@ const SocketProvider = ({ children }) => {
             // console.log(message);
         });
 
+        newSocket.emit("join:company", {}, (message) => {
+            //console.log("join:company",message);
+        });
+
         // newSocket.on("message", (newMessage) => {
         // console.log(newMessage);
         // });
@@ -49,6 +53,22 @@ const SocketProvider = ({ children }) => {
                 // console.error("Failed to parse notification data:", error);
             }
         });
+
+
+        //for task
+
+        newSocket.on("task-updated", (data) => {
+
+
+
+            try {
+                const taskNotification = typeof data === 'string' ? JSON.parse(data) : data;
+
+            } catch (error) {
+                // console.error("Failed to parse notification data:", error);
+            }
+        });
+
 
 
         setSocket(newSocket);

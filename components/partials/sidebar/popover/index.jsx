@@ -1,6 +1,7 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
+import React, { useState } from "react";
+
+import { cn, isLocationMatch, getDynamicPath } from "@/lib/utils";
 import SidebarLogo from "../common/logo";
 import { menusConfig } from "@/config/menus";
 import MenuLabel from "../common/menu-label";
@@ -10,7 +11,9 @@ import NestedSubMenu from "../common/nested-menus";
 import { useSidebar, useThemeStore } from "@/store";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useEffect } from "react";
 
 const PopoverSidebar = ({ trans }) => {
   const { collapsed, setCollapsed, sidebarBg } = useSidebar();
@@ -47,6 +50,35 @@ const PopoverSidebar = ({ trans }) => {
       setCollapsed(true);
     }
   };
+
+  const pathname = usePathname();
+  const locationName = getDynamicPath(pathname);
+
+  useEffect(() => {
+    let subMenuIndex = null;
+    let multiMenuIndex = null;
+    menus?.map((item, i) => {
+      if (item?.child) {
+        item.child.map((childItem, j) => {
+          if (isLocationMatch(childItem.href, locationName)) {
+            subMenuIndex = i;
+          }
+          if (childItem?.multi_menu) {
+            childItem.multi_menu.map((multiItem, k) => {
+              if (isLocationMatch(multiItem.href, locationName)) {
+                subMenuIndex = i;
+                multiMenuIndex = j;
+              }
+            });
+          }
+        });
+      }
+    });
+    setActiveSubmenu(subMenuIndex);
+    setMultiMenu(multiMenuIndex);
+  }, [locationName]);
+
+  // menu title
 
   return (
     <>

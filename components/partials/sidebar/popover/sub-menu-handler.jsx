@@ -1,11 +1,14 @@
 "use client";
+import React, { useContext, useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import { cn, translate } from "@/lib/utils";
 import * as HoverCard from "@radix-ui/react-hover-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
+import { useQuery } from "@tanstack/react-query";
 import CollapsedHoverMenu from "./collapsed-hover-menu";
 import { Badge } from "@/components/ui/badge";
+import { SocketContext } from "../../../scoket/SocketConnection";
+import { useSession } from "next-auth/react";
 
 const SubMenuHandler = ({
   item,
@@ -67,9 +70,9 @@ const SubMenuHandler = ({
             {/* {title && title === "My Task" && (
               <Badge
                 color="destructive"
-                className=" w-5 h-5 p-0  items-center justify-center ml-6"
+                className="w-5 h-5 p-0 items-center justify-center ml-6"
               >
-                1
+                {totalNotificationUnRead}
               </Badge>
             )} */}
             {/* <div className=" ">{translate(title, trans)}</div> */}

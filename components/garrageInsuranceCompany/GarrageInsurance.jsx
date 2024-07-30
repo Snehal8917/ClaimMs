@@ -1,18 +1,18 @@
 "use client";
 import {
   deleteInsurance,
-  getGarrageInsuranceCompanies
+  getGarrageInsuranceCompanies,
+  updateGarrageInsurance,
 } from "@/action/companyAction/insurance-action";
 import BasicDataTable from "@/components/common/data-table/basic-table";
 import DialogPlacement from "@/components/common/dialog/dialog-placement";
 import { BreadcrumbItem, Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { Icon } from "@iconify/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
 import { useSession } from "next-auth/react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -30,8 +30,6 @@ const GarrageInsurance = () => {
   const { data: session, status } = useSession();
 
   const role = session?.role;
-
-  console.log("log", role);
 
   const columns = [
     {
@@ -98,6 +96,28 @@ const GarrageInsurance = () => {
           </div>
         </div>
       ),
+    },
+    {
+      accessorKey: "isActive",
+      header: "Active Status",
+      cell: ({ row }) => {
+        const [activeToggle, setActiveToggle] = useState(
+          row?.original?.isActive
+        );
+
+        return (
+          <div className="flex font-medium text-card-foreground/80 items-center justify-center text-center">
+            <Switch
+              checked={activeToggle}
+              onCheckedChange={(checked) => {
+                setActiveToggle(checked);
+                handleSwitchChange(row?.original?._id, checked);
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        );
+      },
     },
     {
       accessorKey: "contactNo",
@@ -195,6 +215,33 @@ const GarrageInsurance = () => {
       });
     },
   });
+  const updateGarrageInsuranceMutaion = useMutation({
+    mutationKey: ["updateGarrageInsuranceMutaion"],
+    mutationFn: async ({ id, isActive }) => {
+      const formData = new FormData();
+      formData.append(
+        "garageInsuranceDetails",
+        JSON.stringify({ id, isActive })
+      );
+
+      return await updateGarrageInsurance(id, formData); // Pass id to the API call
+    },
+    onSuccess: (response) => {
+      toast.success(response?.message);
+      router.push("/insurance-list");
+      refetch(); // Call refetch if needed
+    },
+    onError: (error) => {
+      toast.error(error?.data?.message || "Not Working");
+    },
+  });
+  const handleSwitchChange = (id, currentStatus) => {
+    const newStatus = !currentStatus ? "false" : "true"; // Convert boolean to string
+    console.log(`Switch toggled for id: ${id}, new status value: ${newStatus}`);
+
+    // Perform mutation with id and newStatus
+    updateGarrageInsuranceMutaion.mutate({ id, isActive: newStatus });
+  };
 
   useEffect(() => {
     if (searchString?.length > 2) {

@@ -153,6 +153,12 @@ export const menusConfig = {
         //   },
         // ],
       },
+      // {
+      //   title: "Reports",
+      //   icon: Graph,
+      //   href: "/reports",
+      //   role: ["company"],
+      // },
     ],
   },
 };

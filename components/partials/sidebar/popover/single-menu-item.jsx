@@ -1,13 +1,14 @@
 "use client";
-import { Icon } from "@iconify/react";
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn, isLocationMatch, translate, getDynamicPath } from "@/lib/utils";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { SocketContext } from "../../../scoket/SocketConnection";
+import { useSession } from "next-auth/react";
+import { getNotificationAction, getUnReadNotificationAction } from "../../../../action/notificationAction/notification-action";
 
 const SingleMenuItem = ({ item, collapsed, trans }) => {
   // const queryClient = useQueryClient();
@@ -30,7 +31,44 @@ const SingleMenuItem = ({ item, collapsed, trans }) => {
   //   queryFn: () => queryClient.getQueryData('selectedRecord'),
   //   // You can provide other options here as needed
   // });
-  // console.log('Selected Record ID:', selectedRecordId);   
+  // console.log('Selected Record ID:', selectedRecordId);  
+
+
+  ///
+
+
+
+  const { data: session } = useSession();
+  const { socket } = useContext(SocketContext);
+
+  const [totalTask, setTotalTask] = useState(0)
+
+  const handleTaskCount = () => {
+    socket.emit("my-task:count", {}, (data) => {
+      let newData = JSON.parse(data);
+      setTotalTask(newData?.totalTask);
+    });
+  };
+
+  useEffect(() => {
+    handleTaskCount();
+
+    const handleNotification = () => {
+      handleTaskCount();
+    };
+
+    const handleTaskUpdate = () => {
+      handleTaskCount();
+    };
+
+    socket.on("notification", handleNotification);
+    socket.on("task-updated", handleTaskUpdate);
+
+    return () => {
+      socket.off("notification", handleNotification);
+      socket.off("task-updated", handleTaskUpdate);
+    };
+  }, [socket]);
 
 
 
@@ -79,7 +117,14 @@ const SingleMenuItem = ({ item, collapsed, trans }) => {
             <IconComponent className="w-5 h-5" />
           </span>
           <div className="text-box flex-grow">{translate(title, trans)}</div>
-          {badge && <Badge className="rounded">{badge}</Badge>}
+          {title && title === "My Task" && totalTask > 0 && (
+            <Badge
+              color="destructive"
+              className="w-5 h-5 p-0 items-center justify-center ml-6"
+            >
+              {totalTask}
+            </Badge>
+          )}
         </div>
       )}
     </Link>

@@ -9,7 +9,7 @@ import { Icon } from "@iconify/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
     deleteQuotation,
@@ -26,12 +26,13 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { FaNotesMedical } from "react-icons/fa";
+import { SocketContext } from "../scoket/SocketConnection";
 
 const MyTaskListing = () => {
     const statusOptions = ["Approved", "Pending", "Declined", "Draft"];
 
     const statusOptions2 = ["Approved", "Pending", "Declined"];
-
+    const { socket } = useContext(SocketContext);
     const { data: session } = useSession();
     const router = useRouter();
     const queryClient = useQueryClient();
@@ -80,18 +81,65 @@ const MyTaskListing = () => {
     });
 
 
+    //
+
+
+    useEffect(() => {
+
+
+
+
+        const handleTaskUpdate = () => {
+            refetch();
+        };
+
+
+        socket.on("task-updated", handleTaskUpdate);
+
+        return () => {
+
+            socket.off("task-updated", handleTaskUpdate);
+        };
+    }, [socket]);
+
+    //
+
+
     useEffect(() => {
         if (searchString.length > 2 || searchString.length === 0) {
             refetch();
         }
     }, [pageIndex, pageSize, searchString, refetch]);
 
+    const handleReadAllNotification = () => {
+
+        socket.emit("notification:read-all", {}, (data) => {
+            //console.log("read all noti :-", data)
+        });
+        refetch();
+
+    }
+
 
 
     const handleViewClick = (e, jobCardId) => {
         e.stopPropagation();
+        handleReadAllNotification();
         router.push(`/jobcard-list/view_jobcard/${jobCardId}`);
     };
+
+    function formatDateTime(dateString) {
+        const date = new Date(dateString);
+
+        const day = String(date.getDate()).padStart(2, "0");
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const year = date.getFullYear();
+
+        const hours = String(date.getHours()).padStart(2, "0");
+        const minutes = String(date.getMinutes()).padStart(2, "0");
+
+        return `${day}-${month}-${year} ${hours}:${minutes}`;
+    }
 
 
     const columns = [
@@ -104,34 +152,6 @@ const MyTaskListing = () => {
                         <span className="whitespace-nowrap">
                             {row?.original?.task || "-"}
                         </span>
-                    </div>
-                </div>
-            ),
-        },
-
-        {
-            accessorKey: "status",
-            header: "Status",
-            cell: ({ row }) => (
-                <div className="font-medium text-card-foreground/80">
-                    <div className="flex space-x-3 items-center">
-                        {/* <span className="whitespace-nowrap">
-                            {row?.original?.status || "-"}
-                        </span> */}
-
-                        <Badge
-                            variant="outline"
-                            color={
-                                (row?.original?.status === "Pending Quotation" &&
-                                    "default") ||
-                                (row?.original?.status === "Done" && "success") ||
-                                (row?.original?.status === "Need Repair" && "warning") ||
-                                (row?.original?.status === "Pending Invoiced" && "info")
-                            }
-                            className="capitalize"
-                        >
-                            {row?.original?.status || "-"}
-                        </Badge>
                     </div>
                 </div>
             ),
@@ -149,16 +169,25 @@ const MyTaskListing = () => {
                 </div>
             ),
         },
-
-
+        {
+            accessorKey: "createdAt",
+            header: "Date",
+            cell: ({ row }) => (
+                <div className="font-medium text-card-foreground/80">
+                    <div className="flex space-x-3 items-center">
+                        <span className="whitespace-nowrap">
+                            {formatDateTime(row?.original?.createdAt || "-")}
+                        </span>
+                    </div>
+                </div>
+            ),
+        },
         {
             header: "Actions",
             id: "actions",
             enableHiding: false,
             cell: ({ row }) => {
                 const jobCardId = row?.original?.jobCardId;
-
-                console.log("jobCardId ", "jobCardId", jobCardId);
 
                 return (
                     <div className="flex gap-3 items-center justify-end">
@@ -183,6 +212,7 @@ const MyTaskListing = () => {
                 );
             },
         },
+
     ];
 
     if (componentLoading) {
@@ -194,6 +224,8 @@ const MyTaskListing = () => {
     }
 
     const taskList = data?.data || [];
+
+
 
     return (
         <Fragment>
@@ -207,7 +239,7 @@ const MyTaskListing = () => {
             <div className="mt-4 space-y-5">
                 <Card>
                     <CardHeader className="mb-0">
-                        <CardTitle className="mb-0">You’ve got <span className="text-primary">{taskList.length} task{taskList.length !== 1 && "s"}</span> today</CardTitle>
+                        <CardTitle className="mb-0">You’ve got <span className="text-primary font-bold">{taskList.length} task{taskList.length !== 1 && "s"}</span> today</CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
                         <BasicDataTable
