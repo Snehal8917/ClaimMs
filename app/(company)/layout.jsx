@@ -26,7 +26,6 @@ const layout = ({ children, params: { lang } }) => {
     }
   }, [status, session, router]);
 
-  // const { data: session, status, update } = useSession();
   if (typeof window !== "undefined") {
     if (session) {
       localStorage.setItem("token", session?.jwt);
