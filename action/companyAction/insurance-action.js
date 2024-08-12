@@ -1,5 +1,5 @@
 import { addInsuranceCompanyUser, deleteInsuranceCompany, editInsuranceCompanyUser, getInsuranceCompanyById, getInsuranceCompanyUsers, updateInsuranceCompanyById } from "../../config/companyConfig/insurancecompany.config";
-import { getGarageInsuranceCompanyById, getGarrageInsuranceCompanyList, updateGarageInsuranceCompanyById } from "../../config/companyConfig/garrageinsurance.config";
+import { getGarageInsuranceCompanyById, getGarrageInsuranceCompanyList, updateGarageInsuranceCompanyById,getGarrageInsuranceCompanyListJobCard } from "../../config/companyConfig/garrageinsurance.config";
 
 
 // For SuperAdmin
@@ -30,11 +30,20 @@ export const updateInsurance = async (id, updatedFields) => {
 
 
 //  For company Garage
-export const getGarrageInsuranceCompanies = async ({ page = 1, size = 10, all = false, search = "" }) => {
-    const response = await getGarrageInsuranceCompanyList({ page, size, all, search });
+export const getGarrageInsuranceCompanies = async ({ page = 1, size = 10, all = false, search = "",isActive=false }) => {
+    const response = await getGarrageInsuranceCompanyList({ page, size, all, search,isActive });
     return response;
   }
-  
+
+  ///new  10 dhfhd
+
+  export const getGarrageInsuranceCompaniesJobcard = async ({ page = 1, size = 10, all = false, search = "",isActive=false }) => {
+    const response = await getGarrageInsuranceCompanyListJobCard({ page, size, all, search,isActive });
+    return response;
+  }
+
+
+  //
   
   export const getGarageInsuranceCompany = async (id) => {
     const response = await getGarageInsuranceCompanyById(id);
