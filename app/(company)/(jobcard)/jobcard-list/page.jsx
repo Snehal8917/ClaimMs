@@ -107,9 +107,16 @@ const JobCardListPage = () => {
     userData?.data?.userId?.permissionId?.jobCard?.update;
 
   const canViewJobCard = isCompany || (PERMISSION_VIEW_JOBCARD && isEmployee);
+
+  // const canCreateJobCard =
+  //   isCompany ||
+  //   (PERMISSION_CREATE_JOBCARD && isEmployee && CREATED_USER_ROLE === "CSR");
   const canCreateJobCard =
-    isCompany ||
-    (PERMISSION_CREATE_JOBCARD && isEmployee && CREATED_USER_ROLE === "CSR");
+  isCompany ||
+    PERMISSION_CREATE_JOBCARD &&
+    isEmployee &&
+    (CREATED_USER_ROLE === "CSR" || CREATED_USER_ROLE === "Surveyor");
+
   const canUpdateJobCard =
     isCompany || (PERMISSION_UPDATE_JOBCARD && isEmployee);
   const canDeleteJobCard =
@@ -194,17 +201,17 @@ const JobCardListPage = () => {
 
         return (
           <div className="text-center">
-          <Badge
-            variant="soft"
-            color={
-              (designation === "CSR" && "success") ||
-              (designation === "Technician" && "default") ||
-              (designation === "Surveyor" && "info")
-            }
-            className="capitalize "
-          >
-            {designation || "-"}
-          </Badge>
+            <Badge
+              variant="soft"
+              color={
+                (designation === "CSR" && "success") ||
+                (designation === "Technician" && "default") ||
+                (designation === "Surveyor" && "info")
+              }
+              className="capitalize "
+            >
+              {designation || "-"}
+            </Badge>
           </div>
         );
       },
@@ -213,16 +220,17 @@ const JobCardListPage = () => {
       accessorKey: "assigny",
       header: "Name of staff",
       cell: ({ row }) => {
-        const name = row?.original?.currentAssignedTo?.employeeId?.firstName 
+        const name = row?.original?.currentAssignedTo?.employeeId?.firstName
         const lastName = row?.original?.currentAssignedTo?.employeeId?.lastName
         return (
-        <div className="font-medium text-card-foreground/80">
-          <div className="flex space-x-3  rtl:space-x-reverse items-center">
-            <span className="whitespace-nowrap">
-            {name && lastName ? `${name} ${lastName}` : "-"}
-            </span>
-          </div>
-        </div>)}
+          <div className="font-medium text-card-foreground/80">
+            <div className="flex space-x-3  rtl:space-x-reverse items-center">
+              <span className="whitespace-nowrap">
+                {name && lastName ? `${name} ${lastName}` : "-"}
+              </span>
+            </div>
+          </div>)
+      }
       ,
     },
 
@@ -324,11 +332,10 @@ const JobCardListPage = () => {
                     handleStopPropagation(e);
                   }}
                   disabled={!canViewJobCard}
-                  className={`${
-                    canViewJobCard
-                      ? "text-default-500"
-                      : "text-default-300 cursor-not-allowed"
-                  }`}
+                  className={`${canViewJobCard
+                    ? "text-default-500"
+                    : "text-default-300 cursor-not-allowed"
+                    }`}
                 >
                   <Icon icon="heroicons:eye" className="h-4 w-4 mr-2" />
                   Preview
@@ -339,11 +346,10 @@ const JobCardListPage = () => {
                     handleStopPropagation(e);
                   }}
                   disabled={!canUpdateJobCard}
-                  className={`${
-                    canUpdateJobCard
-                      ? "text-default-500"
-                      : "text-default-300 cursor-not-allowed"
-                  }`}
+                  className={`${canUpdateJobCard
+                    ? "text-default-500"
+                    : "text-default-300 cursor-not-allowed"
+                    }`}
                 >
                   <Icon
                     icon="heroicons:pencil-square"
@@ -357,11 +363,10 @@ const JobCardListPage = () => {
                     handleStopPropagation(e);
                   }}
                   disabled={!canDeleteJobCard}
-                  className={`${
-                    canDeleteJobCard
-                      ? "text-default-500"
-                      : "text-default-300 cursor-not-allowed"
-                  }`}
+                  className={`${canDeleteJobCard
+                    ? "text-default-500"
+                    : "text-default-300 cursor-not-allowed"
+                    }`}
                 >
                   <Icon icon="heroicons:trash" className="h-4 w-4 mr-2" />
                   Delete
