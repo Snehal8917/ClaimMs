@@ -24,7 +24,7 @@ import GithubIcon from "@/public/images/auth/github.png";
 
 const schema = z.object({
   email: z.string().email({ message: "Your email is invalid." }),
-  password: z.string().min(4),
+  password: z.string(),
 });
 import { useMediaQuery } from "@/hooks/use-media-query";
 

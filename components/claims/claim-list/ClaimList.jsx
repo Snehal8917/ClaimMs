@@ -145,7 +145,7 @@ const ClaimList = () => {
   const columns = [
     {
       accessorKey: "claimNumber",
-      header: "Claim Number",
+      header: "Internal Claim Num",
       cell: ({ row }) => (
         <div className="font-medium text-card-foreground/80">
           <div className="flex space-x-3  rtl:space-x-reverse items-center">
@@ -218,7 +218,7 @@ const ClaimList = () => {
               onValueChange={(value) =>
                 handleStatusUpdate(row?.original?._id, value)
               }
-              disabled={row?.original?.status === "Approved" || USER_ROLE === "Technician" ||  USER_ROLE === "Surveyor"}
+              disabled={row?.original?.status === "Approved" || USER_ROLE === "Technician" ||  USER_ROLE === "CSR"}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select a status" />

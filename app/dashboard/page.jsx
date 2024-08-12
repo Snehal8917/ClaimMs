@@ -136,8 +136,15 @@ const ProjectPageView = ({ trans }) => {
     return labels.map((label) => data[label] || 0);
   };
 
-  const canCreateJobCard =
-    PERMISSION_CREATE_JOBCARD && isEmployee && CREATED_USER_ROLE === "CSR";
+  // const canCreateJobCard =
+  //   PERMISSION_CREATE_JOBCARD && isEmployee && CREATED_USER_ROLE === "CSR"; canCreateJobCard
+
+  const canCreateJobCard = 
+    PERMISSION_CREATE_JOBCARD && 
+    isEmployee && 
+    (CREATED_USER_ROLE === "CSR" || CREATED_USER_ROLE === "Surveyor");
+
+    // console.log(CREATED_USER_ROLE,PERMISSION_CREATE_JOBCARD,isEmployee,"canCreateJobCard")
 
   const xAxisLabels = generateXAxisLabels(selectedTab);
   const chartData =

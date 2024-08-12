@@ -13,16 +13,13 @@ import { Controller, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import Select from "react-select";
 
-const RoleList = [
-  { value: "CSR", label: "CSR" },
-  { value: "Technician", label: "Technician" },
-  { value: "Surveyor", label: "Surveyor" },
-];
-
 const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
   const { data: session } = useSession();
   const [selectedRole, setSelectedRole] = useState(null);
   const [initialStatus, setInitialStatus] = useState(null);
+  const [initialAssignedDesignation, setInitialAssignedDesignation] =
+    useState(null);
+  const [initialAssigned, setInitialAssigned] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [resetTrigger, setResetTrigger] = useState(false);
 
@@ -45,12 +42,15 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
     (role === "company" ||
       (role === "employee" &&
         ((designation === "Technician" &&
-          (initialStatus === "In Progress" || initialStatus === "Re-Assigned")) ||
-          (designation === "Surveyor" &&
-            initialStatus === "Completed"))));
-  const isStatusEditable = ["In Progress","Approved", "Completed", "Re-Assigned"].includes(
-    initialStatus
-  );
+          (initialStatus === "In Progress" ||
+            initialStatus === "Re-Assigned")) ||
+          (designation === "Surveyor" && initialStatus === "Completed"))));
+  const isStatusEditable = [
+    "In Progress",
+    "Approved",
+    "Completed",
+    "Re-Assigned",
+  ].includes(initialStatus);
 
   const formatDate = (isoDate) => {
     if (!isoDate) return "";
@@ -62,11 +62,11 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
   };
 
   const { data: getEmployeeList } = useQuery({
-    queryKey: ["getCSREmployeeAction", selectedRole?.value],
+    queryKey: ["getCSREmployeeAction", initialAssignedDesignation],
     queryFn: () => {
       return getCSREmployeeAction({
         all: true,
-        designation: selectedRole?.value,
+        designation: initialAssignedDesignation,
       });
     },
   });
@@ -85,10 +85,24 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
       toast.error(error?.message || "An error occurred. Please try again.");
     },
   });
+  const updateAssignMutation = useMutation({
+    mutationFn: async (formData) => {
+      return await updateJobCardAction(jobCardId, formData);
+    },
+    onSuccess: (response) => {
+      toast.success(`Job Card Assigned to  ${initialAssignedDesignation}`);
+      setSelectedEmployee(null);
+      refetch();
+    },
+    onError: (error) => {
+      console.error("Error in mutation:", error);
+      toast.error(error?.message || "An error occurred. Please try again.");
+    },
+  });
 
-  const CsrList = getEmployeeList?.data?.map((csr) => ({
+  const EmployeeList = getEmployeeList?.data?.map((csr) => ({
     value: csr._id,
-    label: csr.firstName,
+    label: `${csr.firstName} ${csr.lastName}`,
   }));
 
   const {
@@ -106,6 +120,7 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
   });
 
   const currentStatus = watch("status");
+  const currentAssigned = watch("assignedEmployeeId");
   const afterPhotos = watch("afterPhotos");
 
   const handleAssign = () => {
@@ -129,15 +144,22 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
     }
     updatePostMutation.mutate(formData);
   };
+  const handleEmployeeAssign = () => {
+    const formData = new FormData();
+    formData.append("assignedEmployeeId", currentAssigned);
+    updateAssignMutation.mutate(formData);
+  };
 
   useEffect(() => {
     if (jobcardData) {
       const { currentAssignedTo } = jobcardData;
       setSelectedRole(currentAssignedTo?.employeeId?.designation);
       setValue("role", currentAssignedTo?.employeeId?.designation);
-      setValue("employee", currentAssignedTo?.employeeId?._id);
+      setValue("assignedEmployeeId", currentAssignedTo?.employeeId?._id);
       setValue("status", jobcardData?.status);
       setInitialStatus(jobcardData?.status);
+      setInitialAssigned(currentAssignedTo?.employeeId?._id);
+      setInitialAssignedDesignation(currentAssignedTo?.employeeId?.designation);
       setSelectedEmployee(currentAssignedTo?.employeeId?._id);
     }
   }, [jobcardData, setValue]);
@@ -188,8 +210,13 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
     { value: "Re-Assigned", label: "Re-Assigned" },
   ];
 
+  const isAssignedEnabled =
+    role === "company" || (role === "employee" && designation === "CSR");
+    
   const hasStatusChanged =
     initialStatus !== null && initialStatus !== currentStatus;
+  const hasInitialAssignedChanged =
+    initialAssigned !== null && initialAssigned !== currentAssigned;
 
   return (
     <>
@@ -226,7 +253,9 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
                   <div className="w-full md:w-[48%] lg:w-[48%]  space-y-4  gap-4">
                     <div className="flex flex-wrap gap-4">
                       <div className="w-full md:w-[48%] lg:w-[48%]">
-                        <Label htmlFor="status">Status</Label>
+                        <Label htmlFor="status" className="font-bold">
+                          Status
+                        </Label>
                         <Controller
                           name="status"
                           control={control}
@@ -296,6 +325,45 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
                             </div>
                           </div>
                         )}
+                    </div>
+                    <div className="flex flex-wrap gap-4">
+                      <div className="w-full md:w-[48%] lg:w-[48%]">
+                        <Label htmlFor="assignedEmployeeId" className="font-bold">
+                          Assigned To
+                        </Label>
+                        <Controller
+                          name="assignedEmployeeId"
+                          control={control}
+                          render={({ field: { onChange, value } }) => (
+                            <Select
+                              className="react-select w-full"
+                              classNamePrefix="select"
+                              id="assignedEmployeeId"
+                              options={EmployeeList}
+                              onChange={(selectedOption) => {
+                                onChange(selectedOption?.value);
+                                setSelectedEmployee(selectedOption?.value);
+                              }}
+                              value={EmployeeList?.find(
+                                (option) => option.value === value
+                              )}
+                              isDisabled={!isAssignedEnabled}
+                            />
+                          )}
+                        />
+                      </div>
+                      <div className="w-full md:w-[48%] lg:w-[48%] mt-4">
+                        {hasInitialAssignedChanged && (
+                          <Button
+                            className="ml-auto"
+                            type="button"
+                            onClick={handleEmployeeAssign}
+                            variant="primary"
+                          >
+                            Assign
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

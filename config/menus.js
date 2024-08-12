@@ -29,7 +29,7 @@ export const menusConfig = {
         title: "My Task",
         icon: TaskList,
         href: "/my-task/task-list",
-        role: ["superAdmin", "company", "employee"],
+        role: ["employee"],
       },
       // {
       //   title: "My Task",

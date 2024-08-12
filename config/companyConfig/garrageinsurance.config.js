@@ -17,6 +17,30 @@ export const getGarrageInsuranceCompanyList = async ({
   }
 };
 
+/// new setup
+
+export const getGarrageInsuranceCompanyListJobCard = async ({
+  page = 1,
+  size = 10,
+  all = false,
+  search = "",
+  isActive = false,
+}) => {
+  try {
+    const response = await AxiosCreator.get(
+      `/api/garage-insurance?page=${page}&size=${size}&all=${all}&search=${search}&isActive=${isActive}`
+    );
+    return response.data;
+  } catch (error) {
+    return error.response.data;
+  }
+};
+
+
+
+
+//
+
 export const getGarageInsuranceCompanyById = async (id) => {
   try {
     const response = await AxiosCreator.get(`/api/garage-insurance/${id}`);
