@@ -50,16 +50,14 @@ const companySchemaCreate = z
     mobileNumber: z
       .string()
       .nonempty({ message: "Mobile Number is required." }),
-    password: z
-      .string()
-      .min(1, { message: "Create password is required." })
-      .regex(strongPasswordRegex, {
-        message:
-          "Password must be strong. At least 8 characters long, including one uppercase letter, one lowercase letter, one number, and one special character.",
-      }),
+    password: z.string().min(8, { message: "Password should contain atleast 8 characters." }),
+    // .regex(strongPasswordRegex, {
+    //   message:
+    //     "Password must be strong. At least 8 characters long, including one uppercase letter, one lowercase letter, one number, and one special character.",
+    // }),
     confirmPassword: z
       .string()
-      .min(1, { message: "Confirm password is required." }),
+      .min(8, { message: "Password should contain atleast 8 characters." }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match.",

@@ -55,11 +55,11 @@ const employeeSchema = z
     assignInsuranceCompanys: z.array(z.any()).optional(),
     password: z
       .string()
-      .min(1, { message: "Create password is required." })
-      .regex(strongPasswordRegex, {
-        message:
-          "Password must be strong. At least 8 characters long, including one uppercase letter, one lowercase letter, one number, and one special character.",
-      }),
+      .min(8, { message: "Password should contain atleast 8 characters." }),
+      // .regex(strongPasswordRegex, {
+      //   message:
+      //     "Password must be strong. At least 8 characters long, including one uppercase letter, one lowercase letter, one number, and one special character.",
+      // }),
     confirmPassword: z
       .string()
       .min(1, { message: "Confirm password is required." }),
