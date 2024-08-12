@@ -1,43 +1,36 @@
 "use client";
 import { Fragment, useEffect, useState } from "react";
 
+import { getUserMeAction } from "@/action/auth-action";
 import {
+  deleteQuotation,
   getAllQuotation,
   updateQuotation,
-  deleteQuotation,
 } from "@/action/quotationAction/quotation-action";
 import BasicDataTable from "@/components/common/data-table/basic-table";
 import DialogPlacement from "@/components/common/dialog/dialog-placement";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { FaNotesMedical } from "react-icons/fa";
 import { Icon } from "@iconify/react";
-import { useSession } from "next-auth/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import Link from "next/link";
-import { Plus } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { getUserMeAction } from "@/action/auth-action";
+import { FaNotesMedical } from "react-icons/fa";
 
 const QuotationView = () => {
   const params = useParams();
   const jobCardIEd = params?.view_jobcard;
-  
+
   const { data: session } = useSession();
   const statusOptions = ["Approved", "Pending", "Declined", "Draft"];
   //
@@ -80,7 +73,6 @@ const QuotationView = () => {
   });
 
   const designation = userData?.data?.userId?.designation;
-
 
   const deleteMutation = useMutation({
     mutationFn: deleteQuotation,
@@ -263,29 +255,32 @@ const QuotationView = () => {
         const statusBtn = row?.original?.status;
         const isLatestQuotation = row?.original?.isLatestQuotation;
         const designation = userData?.data?.userId?.designation;
-        const isEditable = userData?.data?.userId?.designation == "Surveyor" || userData.data.userId.role == "company"
-        const isSupplmenteryQuotation=row?.original?.isSupplmenteryQuotation;
+        const isEditable =
+          userData?.data?.userId?.designation == "Surveyor" ||
+          userData.data.userId.role == "company";
+        const isSupplmenteryQuotation = row?.original?.isSupplmenteryQuotation;
         return (
           <div className="flex gap-3 items-center justify-center">
             {designation === "CSR" ? (
               <></>
             ) : (
               <>
-                
-                {statusBtn === "Declined" && isLatestQuotation && !isSupplmenteryQuotation && (
-                  <>
-                    <Button
-                      size="icon"
-                      className="h-9 w-full rounded bg-default-100 dark:bg-default-200 text-default-500 hover:text-primary-foreground"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleReCreate(jobCardId);
-                      }}
-                    >
-                      Re-Create
-                    </Button>
-                  </>
-                )}
+                {statusBtn === "Declined" &&
+                  isLatestQuotation &&
+                  !isSupplmenteryQuotation && (
+                    <>
+                      <Button
+                        size="icon"
+                        className="h-9 w-full rounded bg-default-100 dark:bg-default-200 text-default-500 hover:text-primary-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReCreate(jobCardId);
+                        }}
+                      >
+                        Re-Create
+                      </Button>
+                    </>
+                  )}
               </>
             )}
             {statusBtn === "Approved" && isEditable && (
@@ -301,7 +296,6 @@ const QuotationView = () => {
                       }}
                     >
                       <FaNotesMedical />
-
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -322,7 +316,9 @@ const QuotationView = () => {
       cell: ({ row }) => {
         const jobCardId = row?.original?._id;
         const statusBtn = row?.original?.status;
-        const isEditable = userData.data.userId.designation == "Surveyor" || userData.data.userId.role == "company"
+        const isEditable =
+          userData.data.userId.designation == "Surveyor" ||
+          userData.data.userId.role == "company";
         return (
           <div className="flex gap-3 items-center justify-end">
             <TooltipProvider>
@@ -342,34 +338,34 @@ const QuotationView = () => {
               </Tooltip>
             </TooltipProvider>
 
-
-
             {statusBtn !== "Approved" && (
               <>
-                {statusBtn !== "Declined" && statusBtn !== "Submitted" && isEditable && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          size="icon"
-                          className="h-9 w-9 rounded bg-default-100 dark:bg-default-200 text-default-500 hover:text-primary-foreground"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditClick(jobCardId);
-                          }}
-                        >
-                          <Icon
-                            icon="heroicons:pencil-square"
-                            className="w-5 h-5"
-                          />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Edit Quotation</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
+                {statusBtn !== "Declined" &&
+                  statusBtn !== "Submitted" &&
+                  isEditable && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            className="h-9 w-9 rounded bg-default-100 dark:bg-default-200 text-default-500 hover:text-primary-foreground"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditClick(jobCardId);
+                            }}
+                          >
+                            <Icon
+                              icon="heroicons:pencil-square"
+                              className="w-5 h-5"
+                            />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Edit Quotation</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 {/* <Button
                   size="icon"
                   className="h-9 w-9 rounded bg-default-100 dark:bg-default-200 text-default-500 hover:text-primary-foreground"
@@ -388,10 +384,6 @@ const QuotationView = () => {
     },
   ];
 
-
-
-
-
   if (componentLoading) {
     return <div>Loading...</div>;
   }
@@ -401,6 +393,12 @@ const QuotationView = () => {
   }
 
   const quotations = data?.data?.allQuotations || [];
+  const role = session?.role;
+
+  const isEmployee = role === "employee" || role === "company";
+
+  const canCreateQutation =
+    role === "company" || (isEmployee && designation === "Surveyor");
 
   return (
     <Fragment>
@@ -415,7 +413,7 @@ const QuotationView = () => {
                     Create Additional Quotation
                   </Link>
                 </Button> */}
-              {!quotations.length > 0 && (
+              {!quotations.length > 0 && canCreateQutation && (
                 <Button asChild>
                   <Link href={`/quotations/create/${jobCardIEd}`}>
                     <Plus className="w-5 h-5 ltr:mr-2 rtl:ml-2" />

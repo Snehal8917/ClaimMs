@@ -1,35 +1,30 @@
 "use client";
 import { Fragment, useEffect, useState } from "react";
 
+import { getUserMeAction } from "@/action/auth-action";
 import {
-  getAllQuotation,
-  getAllAdQuotation,
-  updateQuotation,
   deleteQuotation,
+  getAllAdQuotation,
+  updateQuotation
 } from "@/action/quotationAction/quotation-action";
 import BasicDataTable from "@/components/common/data-table/basic-table";
 import DialogPlacement from "@/components/common/dialog/dialog-placement";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Icon } from "@iconify/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import Link from "next/link";
-import { Plus } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 const AdditionalQuotionView = ({ jobcardData }) => {
   const params = useParams();
   const jobCardIEd = params?.view_jobcard;
   const statusOptions = ["Approved", "Pending", "Declined", "Draft"];
+  const { data: session } = useSession();
   //
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -58,6 +53,18 @@ const AdditionalQuotionView = ({ jobcardData }) => {
       });
     },
   });
+
+  const {
+    data: userData,
+    error: userError,
+    isLoading: userLoading,
+  } = useQuery({
+    queryKey: ["userMe"],
+    queryFn: () => getUserMeAction(session.jwt),
+    enabled: !!session?.jwt, // Only run the query if the token is available
+  });
+
+  const designation = userData?.data?.userId?.designation;
 
   const deleteMutation = useMutation({
     mutationFn: deleteQuotation,
@@ -135,7 +142,7 @@ const AdditionalQuotionView = ({ jobcardData }) => {
     router.push(`/quotations/recreate/${quotationID}`);
   };
 
-  const enable_Quotation = jobcardData?.status !== "Draft"
+  const enable_Quotation = jobcardData?.status !== "Draft";
 
   //
 
@@ -184,18 +191,18 @@ const AdditionalQuotionView = ({ jobcardData }) => {
       header: () => <div className="text-center">Status</div>,
       cell: ({ row }) => (
         <div className="text-center">
-        <Badge
-          variant="outline"
-          color={
-            (row?.original?.status === "Draft" && "default") ||
-            (row?.original?.status === "Approved" && "success") ||
-            (row?.original?.status === "Declined" && "warning") ||
-            (row?.original?.status === "Pending" && "default")
-          }
-          className="capitalize"
-        >
-          {row?.original?.status || "-"}
-        </Badge>
+          <Badge
+            variant="outline"
+            color={
+              (row?.original?.status === "Draft" && "default") ||
+              (row?.original?.status === "Approved" && "success") ||
+              (row?.original?.status === "Declined" && "warning") ||
+              (row?.original?.status === "Pending" && "default")
+            }
+            className="capitalize"
+          >
+            {row?.original?.status || "-"}
+          </Badge>
         </div>
       ),
       filterFn: (row, id, value) => {
@@ -220,7 +227,7 @@ const AdditionalQuotionView = ({ jobcardData }) => {
             </Button>
             {statusBtn !== "Pending" && statusBtn !== "Approved" && (
               <>
-                {statusBtn !== "Declined" &&  statusBtn !== "Pending" &&(
+                {statusBtn !== "Declined" && statusBtn !== "Pending" && (
                   <Button
                     size="icon"
                     className="h-9 w-9 rounded bg-default-100 dark:bg-default-200 text-default-500 hover:text-primary-foreground"
@@ -258,6 +265,12 @@ const AdditionalQuotionView = ({ jobcardData }) => {
     return <div>Error loading data</div>;
   }
   const quotations = data?.data?.allAdditionalWorkQuotes || [];
+  const role = session?.role;
+
+  const isEmployee = role === "employee" || role === "company";
+
+  const canCreateQutation =
+    role === "company" || (isEmployee && designation === "Surveyor");
 
   return (
     <Fragment>
@@ -266,14 +279,14 @@ const AdditionalQuotionView = ({ jobcardData }) => {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Additional Quotations List</CardTitle>
-              {enable_Quotation && 
-              <Button asChild>
+              {enable_Quotation && canCreateQutation && (
+                <Button asChild>
                   <Link href={`/additional-quotation/create/${jobCardIEd}`}>
                     <Plus className="w-5 h-5 ltr:mr-2 rtl:ml-2" />
                     Create Additional Quotation
                   </Link>
                 </Button>
-                }
+              )}
             </div>
           </CardHeader>
           <CardContent className="p-0">
