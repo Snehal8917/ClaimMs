@@ -1,6 +1,5 @@
 "use client";
 import { addEmiratesData } from "@/action/emiratesAction/emirates-action";
-import { getCustomerListAction } from "@/action/employeeAction/customer-action";
 import {
   addJobCard,
   getSingleJobCardAction,
@@ -8,10 +7,9 @@ import {
 } from "@/action/employeeAction/jobcard-action";
 import { extractCarAction } from "@/action/extractDataAction/carRcAction";
 import { addLicenceData } from "@/action/licenceAction/licence-action";
-import FileUploaderMultiple from "@/components/common/file-multi-uploader/file-uploader-multiple";
+import DropZone from "@/components/common/drop-zone/DropZone";
 import FileUploaderMultipleFrontBack from "@/components/common/file-upload-front-back/FileUploaderMultipleFrontBack";
 import ClickableStep from "@/components/common/steps/page";
-import DropZone from "@/components/common/drop-zone/DropZone";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,24 +23,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { ratio } from "fuzzball";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import toast from "react-hot-toast";
 import Select from "react-select";
 import { z } from "zod";
-import { ratio } from "fuzzball";
 
-import {
-  getGarrageInsuranceCompanies,
-  getInsuranceCompanies,
-} from "@/action/companyAction/insurance-action";
+import { getUserMeAction } from "@/action/auth-action";
+import { getGarrageInsuranceCompaniesJobcard } from "@/action/companyAction/insurance-action";
 import { getMasterCarDataAction } from "@/action/masterCar/mastercar-action";
 import LayoutLoader from "@/components/layout-loader";
-import { useParams, useRouter } from "next/navigation";
-import { getUserMeAction } from "@/action/auth-action";
-import { useSession } from "next-auth/react";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
-// import { log } from "console";
+import { useSession } from "next-auth/react";
+import { useParams, useRouter } from "next/navigation";
 
 const commonSchema = z.object({
   value: z.string().optional(),
@@ -103,11 +104,9 @@ const step1Schema = z
     fullName: z.string().refine((value) => value.trim() !== "", {
       message: "Customer Name required",
     }),
-  
-  emiratesId: z.array(z.any())
-    .min(1, { message: "Emirates ID required" }),
-  drivingId: z.array(z.any())
-    .min(1, { message: "Driving ID required" }),
+
+    emiratesId: z.array(z.any()).min(1, { message: "Emirates ID required" }),
+    drivingId: z.array(z.any()).min(1, { message: "Driving ID required" }),
     //   drivingId: z.array(z.any()).optional(),
     customerEmiratesId: z.string().refine((value) => value.trim() !== "", {
       message: "Customer Emirates ID is required",
@@ -166,6 +165,8 @@ const step4Schema = z.object({
   dateOfAccident: z.any().optional(),
   isFault: z.boolean().optional(),
   documents: documentSchema,
+  alreadyHasClaimNumber: z.boolean().optional(),
+  insuranceClaimNumber: z.string().optional(),
 });
 
 const repairOptions = [
@@ -226,6 +227,11 @@ const JobCardPage = () => {
   const [beforePhotosFiles, setBeforePhotosFiles] = useState([]);
 
   const [isEmiratesIdSet, setIsEmiratesIdSet] = useState(false);
+
+  // Already have claim number
+  const [modalOpen, setModalOpen] = useState(false);
+  const [insuranceClaimNumber, setInsuranceClaimNumber] = useState("");
+  const [alreadyHasClaimNumber, setAlreadyHasClaimNumber] = useState(false);
 
   const { update_Jobcard } = useParams();
 
@@ -304,8 +310,9 @@ const JobCardPage = () => {
   const { data: InsuranceCompaniesData } = useQuery({
     queryKey: ["getInsuranceCompanies"],
     queryFn: () =>
-      getGarrageInsuranceCompanies({
+      getGarrageInsuranceCompaniesJobcard({
         all: true,
+        isActive: true,
       }),
   });
 
@@ -318,13 +325,16 @@ const JobCardPage = () => {
   //   queryFn: () => getAllEmployee({ all: true }),
   // });
 
-  const InsuranseCompanyList =
-    InsuranceCompaniesData?.data?.garageInsurance?.map((insuranse_compnay) => ({
+  const InsuranseCompanyList = InsuranceCompaniesData?.data?.garageInsurance?.map(
+    (insuranse_compnay) => ({
       value: insuranse_compnay.companyName,
       label: insuranse_compnay.companyName,
       id: insuranse_compnay._id,
-    }));
+    })
+  );
 
+  // console.log("InsuranceCompaniesData ay",InsuranceCompaniesData)
+  console.log("InsuranseCompanyList ay",InsuranseCompanyList)
   // const customersLists = customersData?.data?.customers?.map((customer) => ({
   //   value: customer._id,
   //   label: customer.firstName,
@@ -371,8 +381,6 @@ const JobCardPage = () => {
     control,
     name: "carDetails.model",
   });
-
-
 
   const mutation = useMutation({
     mutationKey: ["addJobCard"],
@@ -450,15 +458,9 @@ const JobCardPage = () => {
         } else if (key === "documents" && activeStep === 3) {
           // Handle documents as binary files
           if (key === "documents") {
-            if (
-              aftrePhotosLists &&
-              aftrePhotosLists?.length > 0
-            ) {
+            if (aftrePhotosLists && aftrePhotosLists?.length > 0) {
               Array.from(aftrePhotosLists).forEach((photo) => {
-                formData.append(
-                  "policeReport",
-                  photo
-                );
+                formData.append("policeReport", photo);
               });
             }
             if (beforePhotosList && beforePhotosList?.length > 0) {
@@ -512,6 +514,9 @@ const JobCardPage = () => {
 
   const onSubmit = async (data, redirect = false) => {
     try {
+      if (alreadyHasClaimNumber && insuranceClaimNumber) {
+        data.insuranceClaimNumber = insuranceClaimNumber;
+      }
       if (activeStep === 0) {
         if (paramId || jobCardId) {
           await updatePostMutation.mutateAsync({
@@ -626,6 +631,32 @@ const JobCardPage = () => {
     name: "registrationCard",
   };
 
+  const handleCheckboxChange = (e) => {
+    if (e.target.checked) {
+      setModalOpen(true);
+    } else {
+      setAlreadyHasClaimNumber(false);
+      setInsuranceClaimNumber("");
+    }
+  };
+
+  const handleModalSubmit = () => {
+    if (insuranceClaimNumber) {
+      setModalOpen(false);
+      setAlreadyHasClaimNumber(true);
+    } else {
+      setAlreadyHasClaimNumber(false);
+      setModalOpen(false);
+    }
+  };
+  const handleModalClose = () => {
+    if (!insuranceClaimNumber) {
+      setAlreadyHasClaimNumber(false);
+      setValue("alreadyHasClaimNumber", false); // Uncheck the checkbox
+    }
+    setModalOpen(false);
+  };
+
   const steps = ["Step 1", "Step 2", "Step 3", "Step 4"];
   const stepDescriptions = [
     "Customer Details",
@@ -654,13 +685,9 @@ const JobCardPage = () => {
   });
 
   const handleEmirateData = (files) => {
-   // console.log(typeof files[0], files, "value inside value");
+    // console.log(typeof files[0], files, "value inside value");
 
-    if (
-      files &&
-      files.length > 0 &&
-      typeof files[0] === "object"
-    ) {
+    if (files && files.length > 0 && typeof files[0] === "object") {
       const formData = new FormData();
 
       Array.from(files).forEach((photo) => {
@@ -674,13 +701,8 @@ const JobCardPage = () => {
     }
   };
 
-
   const handleDrivingIdData = (files) => {
-    if (
-      files &&
-      files.length > 0 &&
-      typeof files[0] === "object"
-    ) {
+    if (files && files.length > 0 && typeof files[0] === "object") {
       const formData = new FormData();
       Array.from(files).forEach((photo) => {
         formData.append("drivingLicense", photo);
@@ -695,11 +717,7 @@ const JobCardPage = () => {
     }
   };
   const handleCarRcIdData = (files) => {
-    if (
-      files &&
-      files.length > 0 &&
-      typeof files[0] === "object"
-    ) {
+    if (files && files.length > 0 && typeof files[0] === "object") {
       const formData = new FormData();
 
       Array.from(files).forEach((photo) => {
@@ -801,9 +819,10 @@ const JobCardPage = () => {
         documents,
         dateOfAccident,
         isFault,
+        alreadyHasClaimNumber,
         insuranceCompany,
       } = jobcardData;
-
+    
       const formatDate = (dateString) =>
         dateString ? new Date(dateString).toISOString().split("T")[0] : "";
       const licenceIssueDate = formatDate(
@@ -856,6 +875,7 @@ const JobCardPage = () => {
       setValue("insuranceDetails.insuranceExpiryDate", insuranceExpiryDate);
       setValue("dateOfAccident", dateOfAccidentformat);
       setValue("isFault", isFault);
+      setValue("alreadyHasClaimNumber", alreadyHasClaimNumber);
       setValue("details", details);
       setValue("status", status);
 
@@ -886,414 +906,404 @@ const JobCardPage = () => {
   };
 
   return (
-    <div>
-      {(loadingoverlay || loadingDriving || loadingCarExtract) && (
-        <div
-          id="overlay"
-          style={{
-            position: "fixed",
-            width: "100%",
-            height: "100%",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.2)",
-            zIndex: 51,
-          }}
-        >
-          <div className="flex items-center justify-center w-screen h-full">
-            <LayoutLoader />
+    <>
+      <div>
+        {(loadingoverlay || loadingDriving || loadingCarExtract) && (
+          <div
+            id="overlay"
+            style={{
+              position: "fixed",
+              width: "100%",
+              height: "100%",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.2)",
+              zIndex: 51,
+            }}
+          >
+            <div className="flex items-center justify-center w-screen h-full">
+              <LayoutLoader />
+            </div>
           </div>
+        )}
+        <div className="">
+          <ClickableStep
+            activeStep={activeStep}
+            steps={steps}
+            stepDescriptions={stepDescriptions}
+          />
         </div>
-      )}
-      <div className="">
-        <ClickableStep
-          activeStep={activeStep}
-          steps={steps}
-          stepDescriptions={stepDescriptions}
-        />
-      </div>
-      <div className="invoice-wrapper mt-6">
-        <div className="grid grid-cols-12 gap-6">
-          <Card className="col-span-12">
-            <CardHeader className="sm:flex-row sm:items-center gap-3">
-              <div className="flex-1 text-xl font-medium text-default-700 whitespace-nowrap">
-                {paramId ? "Update Jobcard - " : `Create Jobcard - `}
-                {activeStep === 0 && <span>{stepDescriptions[0]}</span>}
-                {activeStep === 1 && <span>{stepDescriptions[1]}</span>}
-                {activeStep === 2 && <span>{stepDescriptions[2]}</span>}
-                {activeStep === 3 && <span>{stepDescriptions[3]}</span>}
-              </div>
-            </CardHeader>
-            <form onSubmit={handleSubmit(onSubmit)} className="mt-5 2xl:mt-7">
-              <CardContent className="flex flex-wrap gap-4">
-                {activeStep === 0 && (
-                  <>
-                    <div className="w-full flex flex-wrap justify-between gap-4 pb-4">
-                      <div className="w-full lg:w-full space-y-4">
-                        <Card className="border">
-                          <CardHeader className="flex flex-row items-center gap-3 font-bold">
-                            Document Details
-                          </CardHeader>
-                          <CardContent className="flex flex-wrap gap-4 justify-between w-full">
-                            <div className="flex flex-row flex-wrap gap-4 w-full justify-between">
-                              <div className="lg:w-[48%]">
-                                <div>
-                                  <Label
-                                    htmlFor="emiratesId"
-                                    className="block mb-3 "
-                                  >
-                                    Emirates ID
-                                  </Label>
+        <div className="invoice-wrapper mt-6">
+          <div className="grid grid-cols-12 gap-6">
+            <Card className="col-span-12">
+              <CardHeader className="sm:flex-row sm:items-center gap-3">
+                <div className="flex-1 text-xl font-medium text-default-700 whitespace-nowrap">
+                  {paramId ? "Update Jobcard - " : `Create Jobcard - `}
+                  {activeStep === 0 && <span>{stepDescriptions[0]}</span>}
+                  {activeStep === 1 && <span>{stepDescriptions[1]}</span>}
+                  {activeStep === 2 && <span>{stepDescriptions[2]}</span>}
+                  {activeStep === 3 && <span>{stepDescriptions[3]}</span>}
+                </div>
+              </CardHeader>
+              <form onSubmit={handleSubmit(onSubmit)} className="mt-5 2xl:mt-7">
+                <CardContent className="flex flex-wrap gap-4">
+                  {activeStep === 0 && (
+                    <>
+                      <div className="w-full flex flex-wrap justify-between gap-4 pb-4">
+                        <div className="w-full lg:w-full space-y-4">
+                          <Card className="border">
+                            <CardHeader className="flex flex-row items-center gap-3 font-bold">
+                              Document Details
+                            </CardHeader>
+                            <CardContent className="flex flex-wrap gap-4 justify-between w-full">
+                              <div className="flex flex-row flex-wrap gap-4 w-full justify-between">
+                                <div className="lg:w-[48%]">
+                                  <div>
+                                    <Label
+                                      htmlFor="emiratesId"
+                                      className="block mb-3 "
+                                    >
+                                      Emirates ID
+                                    </Label>
 
-                                  <Controller
-                                    name="emiratesId"
-                                    control={control}
+                                    <Controller
+                                      name="emiratesId"
+                                      control={control}
+                                      render={({
+                                        field: { onChange, value },
+                                      }) => (
+                                        <FileUploaderMultipleFrontBack
+                                          value={value}
+                                          onChange={(files) => {
+                                            onChange(files);
+                                            handleEmirateData(files);
+                                          }}
+                                          name="emiratesId"
+                                          textname="ID"
+                                          errors={errors}
+                                          width={150}
+                                          height={150}
+                                        />
+                                      )}
+                                    />
+                                  </div>
+                                </div>
 
-                                    render={({
-                                      field: { onChange, value },
-                                    }) => (
-                                      <FileUploaderMultipleFrontBack
-                                        value={value}
-                                        onChange={(files) => {
-                                          onChange(files);
-                                          handleEmirateData(files);
-                                        }}
-                                        name="emiratesId"
-                                        textname="ID"
-                                        errors={errors}
-                                        width={150}
-                                        height={150}
+                                <div className="lg:w-[48%]">
+                                  <div>
+                                    <Label
+                                      htmlFor="drivingId"
+                                      className="block mb-3 "
+                                    >
+                                      Driving License
+                                    </Label>
 
-                                      />
-                                    )}
-                                  />
+                                    <Controller
+                                      name="drivingId"
+                                      control={control}
+                                      render={({
+                                        field: { onChange, value },
+                                      }) => (
+                                        <FileUploaderMultipleFrontBack
+                                          value={value}
+                                          onChange={(files) => {
+                                            onChange(files);
+                                            handleDrivingIdData(files);
+                                          }}
+                                          name="drivingId"
+                                          textname="License"
+                                          errors={errors}
+                                          width={150}
+                                          height={150}
+                                        />
+                                      )}
+                                    />
+                                  </div>
                                 </div>
                               </div>
-
-
-                              <div className="lg:w-[48%]">
-                                <div>
-                                  <Label
-                                    htmlFor="drivingId"
-                                    className="block mb-3 "
-                                  >
-                                    Driving License
-                                  </Label>
-
-                                  <Controller
-                                    name="drivingId"
-                                    control={control}
-
-                                    render={({
-                                      field: { onChange, value },
-                                    }) => (
-                                      <FileUploaderMultipleFrontBack
-                                        value={value}
-                                        onChange={(files) => {
-                                          onChange(files);
-                                          handleDrivingIdData(files);
-                                        }}
-                                        name="drivingId"
-                                        textname="License"
-                                        errors={errors}
-                                        width={150}
-                                        height={150}
-
-                                      />
-                                    )}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
+                            </CardContent>
+                          </Card>
+                        </div>
                       </div>
-                    </div>
-                    <div className="w-full flex flex-wrap justify-between gap-4">
-                      <div className="w-full lg:w-full space-y-4">
-                        <Card className="border">
-                          <CardHeader className="flex flex-row items-center gap-3 font-bold">
-                            Customer Details
-                          </CardHeader>
-                          <CardContent className="flex flex-wrap gap-4 justify-between w-full">
-                            <div className="w-full flex flex-wrap justify-between gap-4">
-                              <div className="w-full lg:w-[48%] space-y-4">
-                                <div>
-                                  <Label htmlFor="fullName">
-                                    Customer Name
-                                  </Label>
-                                  <div className="flex  flex-col gap-2 w-full">
+                      <div className="w-full flex flex-wrap justify-between gap-4">
+                        <div className="w-full lg:w-full space-y-4">
+                          <Card className="border">
+                            <CardHeader className="flex flex-row items-center gap-3 font-bold">
+                              Customer Details
+                            </CardHeader>
+                            <CardContent className="flex flex-wrap gap-4 justify-between w-full">
+                              <div className="w-full flex flex-wrap justify-between gap-4">
+                                <div className="w-full lg:w-[48%] space-y-4">
+                                  <div>
+                                    <Label htmlFor="fullName">
+                                      Customer Name
+                                    </Label>
+                                    <div className="flex  flex-col gap-2 w-full">
+                                      <Controller
+                                        control={control}
+                                        name="fullName"
+                                        defaultValue=""
+                                        render={({ field }) => (
+                                          <Input
+                                            type="text"
+                                            placeholder="Customer name"
+                                            size="lg"
+                                            id="fullName"
+                                            {...field}
+                                          />
+                                        )}
+                                      />
+                                      {errors.fullName && (
+                                        <span className="text-red-700">
+                                          {errors.fullName.message}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <Label htmlFor="email">Email</Label>
+                                    <div className="flex flex-col  gap-2 w-full">
+                                      <Controller
+                                        control={control}
+                                        name="email"
+                                        defaultValue=""
+                                        render={({ field }) => (
+                                          <Input
+                                            type="text"
+                                            placeholder="Email"
+                                            size="lg"
+                                            id="email"
+                                            {...field}
+                                          />
+                                        )}
+                                      />
+                                      {errors.email && (
+                                        <span className="text-red-700">
+                                          {errors.email.message}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Label>Mobile no</Label>
+
                                     <Controller
                                       control={control}
-                                      name="fullName"
+                                      name="mobileNumber"
                                       defaultValue=""
                                       render={({ field }) => (
                                         <Input
                                           type="text"
-                                          placeholder="Customer name"
+                                          placeholder="Mobile No"
                                           size="lg"
-                                          id="fullName"
+                                          id="mobileNumber"
                                           {...field}
                                         />
                                       )}
                                     />
-                                    {errors.fullName && (
+                                    {errors.mobileNumber && (
                                       <span className="text-red-700">
-                                        {errors.fullName.message}
+                                        {errors.mobileNumber.message}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="">
+                                    <Label htmlFor="customerEmiratesId">
+                                      Emirate ID
+                                    </Label>
+
+                                    <Controller
+                                      control={control}
+                                      name="customerEmiratesId"
+                                      defaultValue=""
+                                      render={({ field }) => (
+                                        <Input
+                                          type="text"
+                                          placeholder="Emirate ID"
+                                          size="lg"
+                                          id="customerEmiratesId"
+                                          {...field}
+                                          disabled={isDisabled}
+                                        />
+                                      )}
+                                    />
+                                    {errors.customerEmiratesId && (
+                                      <span className="text-red-700">
+                                        {errors.customerEmiratesId.message}
                                       </span>
                                     )}
                                   </div>
                                 </div>
 
-                                <div>
-                                  <Label htmlFor="email">Email</Label>
-                                  <div className="flex flex-col  gap-2 w-full">
-                                    <Controller
-                                      control={control}
-                                      name="email"
-                                      defaultValue=""
-                                      render={({ field }) => (
-                                        <Input
-                                          type="text"
-                                          placeholder="Email"
-                                          size="lg"
-                                          id="email"
-                                          {...field}
-                                        />
+                                <div className="w-full lg:w-[48%] space-y-4">
+                                  <div>
+                                    <Label htmlFor="licenceNo">
+                                      Driving License Number
+                                    </Label>
+                                    <div className="flex flex-col  gap-2 w-full">
+                                      <Controller
+                                        control={control}
+                                        name="licenceNo"
+                                        defaultValue=""
+                                        render={({ field }) => (
+                                          <Input
+                                            type="text"
+                                            placeholder="License Number"
+                                            size="lg"
+                                            id="licenceNo"
+                                            {...field}
+                                          />
+                                        )}
+                                      />
+                                      {errors.licenceNo && (
+                                        <span className="text-red-700">
+                                          {errors.licenceNo.message}
+                                        </span>
                                       )}
-                                    />
-                                    {errors.email && (
-                                      <span className="text-red-700">
-                                        {errors.email.message}
-                                      </span>
-                                    )}
+                                    </div>
                                   </div>
-                                </div>
-                                <div>
-                                  <Label>Mobile no</Label>
-
-                                  <Controller
-                                    control={control}
-                                    name="mobileNumber"
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                      <Input
-                                        type="text"
-                                        placeholder="Mobile No"
-                                        size="lg"
-                                        id="mobileNumber"
-                                        {...field}
+                                  <div>
+                                    <Label htmlFor="licenceIssueDate">
+                                      Driving License Issue
+                                    </Label>
+                                    <div className="flex flex-col gap-2 w-full">
+                                      <Controller
+                                        control={control}
+                                        name="licenceIssueDate"
+                                        defaultValue=""
+                                        render={({ field }) => (
+                                          <Input
+                                            type="date"
+                                            placeholder="Driving License Issue"
+                                            size="lg"
+                                            id="licenceIssueDate"
+                                            {...field}
+                                          />
+                                        )}
                                       />
-                                    )}
-                                  />
-                                  {errors.mobileNumber && (
-                                    <span className="text-red-700">
-                                      {errors.mobileNumber.message}
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="">
-                                  <Label htmlFor="customerEmiratesId">
-                                    Emirate ID
-                                  </Label>
-
-                                  <Controller
-                                    control={control}
-                                    name="customerEmiratesId"
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                      <Input
-                                        type="text"
-                                        placeholder="Emirate ID"
-                                        size="lg"
-                                        id="customerEmiratesId"
-                                        {...field}
-                                        disabled={isDisabled}
+                                      {errors.licenceIssueDate && (
+                                        <span className="text-red-700">
+                                          {errors.licenceIssueDate.message}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="licenceExpiryDate">
+                                      Driving License Expiry
+                                    </Label>
+                                    <div className="flex flex-col gap-2 w-full">
+                                      <Controller
+                                        control={control}
+                                        name="licenceExpiryDate"
+                                        defaultValue=""
+                                        render={({ field }) => (
+                                          <Input
+                                            type="date"
+                                            placeholder="Driving License Expiry"
+                                            size="lg"
+                                            id="licenceExpiryDate"
+                                            {...field}
+                                          />
+                                        )}
                                       />
-                                    )}
-                                  />
-                                  {errors.customerEmiratesId && (
-                                    <span className="text-red-700">
-                                      {errors.customerEmiratesId.message}
-                                    </span>
-                                  )}
+                                      {errors.licenceExpiryDate && (
+                                        <span className="text-red-700">
+                                          {errors.licenceExpiryDate.message}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="tcNo">TC Number</Label>
+                                    <div className="flex flex-col gap-2 w-full">
+                                      <Controller
+                                        control={control}
+                                        name="tcNo"
+                                        defaultValue=""
+                                        render={({ field }) => (
+                                          <Input
+                                            type="text"
+                                            placeholder="TC number"
+                                            size="lg"
+                                            id="tcNo"
+                                            {...field}
+                                          />
+                                        )}
+                                      />
+                                      {errors.tcNo && (
+                                        <span className="text-red-700">
+                                          {errors.tcNo.message}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-
-                              <div className="w-full lg:w-[48%] space-y-4">
-                                <div>
-                                  <Label htmlFor="licenceNo">
-                                    Driving License Number
-                                  </Label>
-                                  <div className="flex flex-col  gap-2 w-full">
-                                    <Controller
-                                      control={control}
-                                      name="licenceNo"
-                                      defaultValue=""
-                                      render={({ field }) => (
-                                        <Input
-                                          type="text"
-                                          placeholder="License Number"
-                                          size="lg"
-                                          id="licenceNo"
-                                          {...field}
-                                        />
-                                      )}
-                                    />
-                                    {errors.licenceNo && (
-                                      <span className="text-red-700">
-                                        {errors.licenceNo.message}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                                <div>
-                                  <Label htmlFor="licenceIssueDate">
-                                    Driving License Issue
-                                  </Label>
-                                  <div className="flex flex-col gap-2 w-full">
-                                    <Controller
-                                      control={control}
-                                      name="licenceIssueDate"
-                                      defaultValue=""
-                                      render={({ field }) => (
-                                        <Input
-                                          type="date"
-                                          placeholder="Driving License Issue"
-                                          size="lg"
-                                          id="licenceIssueDate"
-                                          {...field}
-                                        />
-                                      )}
-                                    />
-                                    {errors.licenceIssueDate && (
-                                      <span className="text-red-700">
-                                        {errors.licenceIssueDate.message}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                                <div>
-                                  <Label htmlFor="licenceExpiryDate">
-                                    Driving License Expiry
-                                  </Label>
-                                  <div className="flex flex-col gap-2 w-full">
-                                    <Controller
-                                      control={control}
-                                      name="licenceExpiryDate"
-                                      defaultValue=""
-                                      render={({ field }) => (
-                                        <Input
-                                          type="date"
-                                          placeholder="Driving License Expiry"
-                                          size="lg"
-                                          id="licenceExpiryDate"
-                                          {...field}
-                                        />
-                                      )}
-                                    />
-                                    {errors.licenceExpiryDate && (
-                                      <span className="text-red-700">
-                                        {errors.licenceExpiryDate.message}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                                <div>
-                                  <Label htmlFor="tcNo">TC Number</Label>
-                                  <div className="flex flex-col gap-2 w-full">
-                                    <Controller
-                                      control={control}
-                                      name="tcNo"
-                                      defaultValue=""
-                                      render={({ field }) => (
-                                        <Input
-                                          type="text"
-                                          placeholder="TC number"
-                                          size="lg"
-                                          id="tcNo"
-                                          {...field}
-                                        />
-                                      )}
-                                    />
-                                    {errors.tcNo && (
-                                      <span className="text-red-700">
-                                        {errors.tcNo.message}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
+                            </CardContent>
+                          </Card>
+                        </div>
                       </div>
-                    </div>
-                  </>
-                )}
+                    </>
+                  )}
 
-                {activeStep === 1 && (
-                  // Car Details & Insurance Details
-                  <>
-                    <div className="w-full flex flex-wrap justify-between gap-4 pb-4">
-                      <div className="w-full lg:w-full space-y-4">
-                        <Card className="border">
-                          <CardHeader className="flex flex-row items-center gap-3 font-bold">
-                            Document Details
-                          </CardHeader>
-                          <CardContent className="flex flex-wrap gap-4 justify-between w-full">
-                            <div className="flex flex-row flex-wrap gap-4 w-full justify-between">
-                              <div className="lg:w-[48%]">
-                                <div>
-                                  <Label
-                                    htmlFor="registrationCard"
-                                    className="block mb-3 "
-                                  >
-                                    Car Registration Card
-                                  </Label>
-                                  <Controller
-                                    name="registrationCard"
-                                    control={control}
+                  {activeStep === 1 && (
+                    // Car Details & Insurance Details
+                    <>
+                      <div className="w-full flex flex-wrap justify-between gap-4 pb-4">
+                        <div className="w-full lg:w-full space-y-4">
+                          <Card className="border">
+                            <CardHeader className="flex flex-row items-center gap-3 font-bold">
+                              Document Details
+                            </CardHeader>
+                            <CardContent className="flex flex-wrap gap-4 justify-between w-full">
+                              <div className="flex flex-row flex-wrap gap-4 w-full justify-between">
+                                <div className="lg:w-[48%]">
+                                  <div>
+                                    <Label
+                                      htmlFor="registrationCard"
+                                      className="block mb-3 "
+                                    >
+                                      Car Registration Card
+                                    </Label>
+                                    <Controller
+                                      name="registrationCard"
+                                      control={control}
+                                      render={({
+                                        field: { onChange, value },
+                                      }) => (
+                                        <FileUploaderMultipleFrontBack
+                                          value={value}
+                                          onChange={(files) => {
+                                            onChange(files);
+                                            handleCarRcIdData(files);
+                                          }}
+                                          name="registrationCard"
+                                          textname="Car RC"
+                                          errors={errors}
+                                          width={150}
+                                          height={150}
+                                        />
 
-                                    render={({
-                                      field: { onChange, value },
-                                    }) => (
-
-                                      <FileUploaderMultipleFrontBack
-                                        value={value}
-                                        onChange={(files) => {
-                                          onChange(files);
-                                          handleCarRcIdData(files);
-                                        }}
-                                        name="registrationCard"
-                                        textname="Car RC"
-                                        errors={errors}
-                                        width={150}
-                                        height={150}
-
-                                      />
-
-
-
-
-                                      // <FileUploaderMultiple
-                                      //   value={value}
-                                      //   onChange={(files) => {
-                                      //     onChange(files);
-                                      //     handleCarRcIdData(files);
-                                      //   }}
-                                      //   name="registrationCard"
-                                      //   textname="Car RC"
-                                      //   errors={errors}
-                                      //   width={150}
-                                      //   height={150}
-                                      //   resetTrigger={resetTrigger}
-                                      // />
-                                    )}
-                                  />
-                                  {/* {extractCarMutation.isLoading && (
+                                        // <FileUploaderMultiple
+                                        //   value={value}
+                                        //   onChange={(files) => {
+                                        //     onChange(files);
+                                        //     handleCarRcIdData(files);
+                                        //   }}
+                                        //   name="registrationCard"
+                                        //   textname="Car RC"
+                                        //   errors={errors}
+                                        //   width={150}
+                                        //   height={150}
+                                        //   resetTrigger={resetTrigger}
+                                        // />
+                                      )}
+                                    />
+                                    {/* {extractCarMutation.isLoading && (
                                     <p>Loading...</p>
                                   )}
                                   {extractCarMutation.isError && (
@@ -1304,132 +1314,133 @@ const JobCardPage = () => {
                                   {extractCarMutation.isSuccess && (
                                     <p>File uploaded successfully.</p>
                                   )} */}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>
+                            </CardContent>
+                          </Card>
+                        </div>
                       </div>
-                    </div>
-                    <div className="w-full flex flex-wrap justify-between gap-4">
-                      <div className="w-full lg:w-full space-y-4">
-                        <Card className="border">
-                          <CardHeader className="flex flex-row items-center gap-3 font-bold">
-                            Car Details
-                          </CardHeader>
-                          <CardContent className="flex flex-wrap gap-4 justify-between w-full">
-                            <div className="flex flex-col flex-wrap gap-4 w-full lg:w-[45%] justify-between">
-                              {/* year */}
-                              <div className="w-full space-y-4">
-                                <div className="w-full lg:w-full">
-                                  <div>
-                                    <Label htmlFor="carYear">Year</Label>
-                                    <div className="flex gap-2 w-full">
-                                      <Input
-                                        type="text"
-                                        placeholder="carYear"
-                                        {...register("carDetails.year")}
-                                        size="lg"
-                                        id="year"
-                                        className={cn("w-full", {
-                                          "border-destructive":
-                                            errors.carDetails?.year,
-                                        })}
-                                      />
-                                    </div>
-                                    {errors.carDetails?.year && (
-                                      <div className="text-red-500 mt-2">
-                                        {errors.carDetails.year.message}
+                      <div className="w-full flex flex-wrap justify-between gap-4">
+                        <div className="w-full lg:w-full space-y-4">
+                          <Card className="border">
+                            <CardHeader className="flex flex-row items-center gap-3 font-bold">
+                              Car Details
+                            </CardHeader>
+                            <CardContent className="flex flex-wrap gap-4 justify-between w-full">
+                              <div className="flex flex-col flex-wrap gap-4 w-full lg:w-[45%] justify-between">
+                                {/* year */}
+                                <div className="w-full space-y-4">
+                                  <div className="w-full lg:w-full">
+                                    <div>
+                                      <Label htmlFor="carYear">Year</Label>
+                                      <div className="flex gap-2 w-full">
+                                        <Input
+                                          type="text"
+                                          placeholder="carYear"
+                                          {...register("carDetails.year")}
+                                          size="lg"
+                                          id="year"
+                                          className={cn("w-full", {
+                                            "border-destructive":
+                                              errors.carDetails?.year,
+                                          })}
+                                        />
                                       </div>
-                                    )}
+                                      {errors.carDetails?.year && (
+                                        <div className="text-red-500 mt-2">
+                                          {errors.carDetails.year.message}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                              {/* make */}
-                              <div className="w-full space-y-4">
-                                <div className="w-full lg:w-full">
-                                  <div>
-                                    <Label htmlFor="carDetails.make">
-                                      Make
-                                    </Label>
-                                    <div className="flex gap-2 w-full">
-                                      <Controller
-                                        name="carDetails.make"
-                                        control={control}
-                                        render={({
-                                          field: { onChange, value },
-                                        }) => (
-                                          <Select
-                                            className="react-select w-full"
-                                            classNamePrefix="select"
-                                            id="carDetails.make"
-                                            styles={styles}
-                                            options={formattedCarData}
-                                            onChange={(selectedOption) => {
-                                              onChange(selectedOption.value); // Assuming selectedOption is { value, label }
-                                              handleMakeChange(
-                                                selectedOption.value
-                                              );
-                                            }}
-                                            value={formattedCarData?.find(
-                                              (option) => option.value === value
-                                            )}
-                                          />
-                                        )}
-                                      />
-                                    </div>
-                                    {errors.carDetails?.make && (
-                                      <div className="text-red-500 mt-2">
-                                        {errors.carDetails.make.message}
+                                {/* make */}
+                                <div className="w-full space-y-4">
+                                  <div className="w-full lg:w-full">
+                                    <div>
+                                      <Label htmlFor="carDetails.make">
+                                        Make
+                                      </Label>
+                                      <div className="flex gap-2 w-full">
+                                        <Controller
+                                          name="carDetails.make"
+                                          control={control}
+                                          render={({
+                                            field: { onChange, value },
+                                          }) => (
+                                            <Select
+                                              className="react-select w-full"
+                                              classNamePrefix="select"
+                                              id="carDetails.make"
+                                              styles={styles}
+                                              options={formattedCarData}
+                                              onChange={(selectedOption) => {
+                                                onChange(selectedOption.value); // Assuming selectedOption is { value, label }
+                                                handleMakeChange(
+                                                  selectedOption.value
+                                                );
+                                              }}
+                                              value={formattedCarData?.find(
+                                                (option) =>
+                                                  option.value === value
+                                              )}
+                                            />
+                                          )}
+                                        />
                                       </div>
-                                    )}
+                                      {errors.carDetails?.make && (
+                                        <div className="text-red-500 mt-2">
+                                          {errors.carDetails.make.message}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                              {/* model */}
-                              <div className="w-full space-y-4">
-                                <div className="w-full lg:w-full">
-                                  <div>
-                                    <Label htmlFor="carDetails.model">
-                                      Model
-                                    </Label>
-                                    <div className="flex gap-2 w-full">
-                                      <Controller
-                                        name="carDetails.model"
-                                        control={control}
-                                        render={({
-                                          field: { onChange, value },
-                                        }) => (
-                                          <Select
-                                            className="react-select w-full"
-                                            classNamePrefix="select"
-                                            id="carDetails.model"
-                                            styles={styles}
-                                            options={carModelLists?.map(
-                                              (model) => ({
-                                                value: model,
-                                                label: model,
-                                              })
-                                            )}
-                                            onChange={(selectedOption) => {
-                                              onChange(selectedOption.value); // Assuming selectedOption is { value, label }
-                                              handleModelChange(
-                                                selectedOption.value
-                                              );
-                                            }}
-                                            value={{
-                                              value: carModelLists?.find(
-                                                (option) => option === value
-                                              ),
-                                              label: carModelLists?.find(
-                                                (option) => option === value
-                                              ),
-                                            }}
-                                            isDisabled={!selectedMake}
-                                          />
-                                        )}
-                                      />
-                                      {/* <Input
+                                {/* model */}
+                                <div className="w-full space-y-4">
+                                  <div className="w-full lg:w-full">
+                                    <div>
+                                      <Label htmlFor="carDetails.model">
+                                        Model
+                                      </Label>
+                                      <div className="flex gap-2 w-full">
+                                        <Controller
+                                          name="carDetails.model"
+                                          control={control}
+                                          render={({
+                                            field: { onChange, value },
+                                          }) => (
+                                            <Select
+                                              className="react-select w-full"
+                                              classNamePrefix="select"
+                                              id="carDetails.model"
+                                              styles={styles}
+                                              options={carModelLists?.map(
+                                                (model) => ({
+                                                  value: model,
+                                                  label: model,
+                                                })
+                                              )}
+                                              onChange={(selectedOption) => {
+                                                onChange(selectedOption.value); // Assuming selectedOption is { value, label }
+                                                handleModelChange(
+                                                  selectedOption.value
+                                                );
+                                              }}
+                                              value={{
+                                                value: carModelLists?.find(
+                                                  (option) => option === value
+                                                ),
+                                                label: carModelLists?.find(
+                                                  (option) => option === value
+                                                ),
+                                              }}
+                                              isDisabled={!selectedMake}
+                                            />
+                                          )}
+                                        />
+                                        {/* <Input
                                         type="text"
                                         placeholder="model"
                                         {...register("carDetails.model")}
@@ -1440,24 +1451,149 @@ const JobCardPage = () => {
                                             errors.carDetails?.model,
                                         })}
                                       /> */}
-                                    </div>
-                                    {errors.carDetails?.model && (
-                                      <div className="text-red-500 mt-2">
-                                        {errors.carDetails.model.message}
                                       </div>
-                                    )}
+                                      {errors.carDetails?.model && (
+                                        <div className="text-red-500 mt-2">
+                                          {errors.carDetails.model.message}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* trim */}
+                                <div className="w-full space-y-4">
+                                  <div className="w-full lg:w-full">
+                                    <div>
+                                      <Label htmlFor="trim">Trim</Label>
+                                      <div className="flex gap-2 w-full">
+                                        <Controller
+                                          name="carDetails.trim"
+                                          control={control}
+                                          render={({
+                                            field: { onChange, value },
+                                          }) => (
+                                            <Select
+                                              className="react-select w-full"
+                                              classNamePrefix="select"
+                                              id="carDetails.trim"
+                                              styles={styles}
+                                              options={carTrimLists?.map(
+                                                (trim) => ({
+                                                  value: trim,
+                                                  label: trim,
+                                                })
+                                              )}
+                                              onChange={(selectedOption) => {
+                                                onChange(selectedOption.value);
+                                              }}
+                                              value={{
+                                                value: carTrimLists?.find(
+                                                  (option) => option === value
+                                                ),
+                                                label: carTrimLists?.find(
+                                                  (option) => option === value
+                                                ),
+                                              }}
+                                              isDisabled={!selectedModel} // Disable the trim select if no model is selected
+                                            />
+                                          )}
+                                        />
+                                      </div>
+                                      {errors.carDetails?.trim && (
+                                        <div className="text-red-500 mt-2">
+                                          {errors.carDetails?.trim.message}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
+                              <div className="flex flex-col flex-wrap w-full lg:w-[45%] gap-4">
+                                <div className="w-full space-y-4">
+                                  <div className="w-full lg:w-full">
+                                    <div>
+                                      <Label htmlFor="chassisNo">
+                                        Chassis No
+                                      </Label>
+                                      <div className="flex gap-2 w-full">
+                                        <Input
+                                          type="text"
+                                          placeholder="Chassis No"
+                                          size="lg"
+                                          {...register("carDetails.chassisNo")}
+                                          id="chassisNo"
+                                          className={cn("w-full", {
+                                            "border-red-500":
+                                              errors?.carDetails?.chassisNo,
+                                          })}
+                                        />
+                                      </div>
+                                      {errors.carDetails?.chassisNo && (
+                                        <div className="text-red-500 mt-2">
+                                          {
+                                            errors?.carDetails?.chassisNo
+                                              ?.message
+                                          }
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
 
-                              {/* trim */}
-                              <div className="w-full space-y-4">
-                                <div className="w-full lg:w-full">
+                                <div className="w-full space-y-4">
+                                  <div className="w-full lg:w-full">
+                                    <div>
+                                      <Label htmlFor="plateNumber">
+                                        Plate Number
+                                      </Label>
+                                      <div className="flex gap-2 w-full">
+                                        <Input
+                                          type="text"
+                                          placeholder="Plate Number"
+                                          size="lg"
+                                          id="plateNumber"
+                                          {...register(
+                                            "carDetails.plateNumber"
+                                          )}
+                                          className={cn("w-full", {
+                                            "border-red-500":
+                                              errors.carDetails?.plateNumber,
+                                          })}
+                                        />
+                                      </div>
+                                      {errors.carDetails?.plateNumber && (
+                                        <div className="text-red-500 mt-2">
+                                          {
+                                            errors.carDetails.plateNumber
+                                              .message
+                                          }
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </div>
+                      <div className="w-full flex flex-wrap justify-between gap-4">
+                        <div className="w-full lg:w-full space-y-4">
+                          <Card className=" border">
+                            <CardHeader className="flex flex-row items-center gap-3 font-bold">
+                              Insurance Details
+                            </CardHeader>
+                            <CardContent className="flex flex-wrap gap-4 justify-between w-full">
+                              <div className="flex flex-col flex-wrap w-full lg:w-[45%] gap-4 justify-between">
+                                <div className="w-full space-y-4">
                                   <div>
-                                    <Label htmlFor="trim">Trim</Label>
+                                    <Label htmlFor="insuranceDetails.currentInsurance">
+                                      Current Insurer
+                                    </Label>
                                     <div className="flex gap-2 w-full">
                                       <Controller
-                                        name="carDetails.trim"
+                                        name="insuranceDetails.currentInsurance"
                                         control={control}
                                         render={({
                                           field: { onChange, value },
@@ -1465,141 +1601,27 @@ const JobCardPage = () => {
                                           <Select
                                             className="react-select w-full"
                                             classNamePrefix="select"
-                                            id="carDetails.trim"
+                                            id="insuranceDetails.currentInsurance"
                                             styles={styles}
-                                            options={carTrimLists?.map(
-                                              (trim) => ({
-                                                value: trim,
-                                                label: trim,
-                                              })
-                                            )}
+                                            name="clear"
+                                            options={InsuranseCompanyList}
                                             onChange={(selectedOption) => {
-                                              onChange(selectedOption.value);
+                                              onChange(selectedOption?.value);
+                                              setCurrentInsId(
+                                                selectedOption?.id
+                                              );
                                             }}
-                                            value={{
-                                              value: carTrimLists?.find(
-                                                (option) => option === value
-                                              ),
-                                              label: carTrimLists?.find(
-                                                (option) => option === value
-                                              ),
-                                            }}
-                                            isDisabled={!selectedModel} // Disable the trim select if no model is selected
+                                            // onChange={(selectedOption) => {
+                                            //   onChange({ companyName: selectedOption.value, companyId: selectedOption.id });
+                                            // }}
+                                            value={InsuranseCompanyList?.find(
+                                              (option) =>
+                                                option?.value === value
+                                            )}
                                           />
                                         )}
                                       />
-                                    </div>
-                                    {errors.carDetails?.trim && (
-                                      <div className="text-red-500 mt-2">
-                                        {errors.carDetails?.trim.message}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex flex-col flex-wrap w-full lg:w-[45%] gap-4">
-                              <div className="w-full space-y-4">
-                                <div className="w-full lg:w-full">
-                                  <div>
-                                    <Label htmlFor="chassisNo">
-                                      Chassis No
-                                    </Label>
-                                    <div className="flex gap-2 w-full">
-                                      <Input
-                                        type="text"
-                                        placeholder="Chassis No"
-                                        size="lg"
-                                        {...register("carDetails.chassisNo")}
-                                        id="chassisNo"
-                                        className={cn("w-full", {
-                                          "border-red-500":
-                                            errors?.carDetails?.chassisNo,
-                                        })}
-                                      />
-                                    </div>
-                                    {errors.carDetails?.chassisNo && (
-                                      <div className="text-red-500 mt-2">
-                                        {errors?.carDetails?.chassisNo?.message}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="w-full space-y-4">
-                                <div className="w-full lg:w-full">
-                                  <div>
-                                    <Label htmlFor="plateNumber">
-                                      Plate Number
-                                    </Label>
-                                    <div className="flex gap-2 w-full">
-                                      <Input
-                                        type="text"
-                                        placeholder="Plate Number"
-                                        size="lg"
-                                        id="plateNumber"
-                                        {...register("carDetails.plateNumber")}
-                                        className={cn("w-full", {
-                                          "border-red-500":
-                                            errors.carDetails?.plateNumber,
-                                        })}
-                                      />
-                                    </div>
-                                    {errors.carDetails?.plateNumber && (
-                                      <div className="text-red-500 mt-2">
-                                        {errors.carDetails.plateNumber.message}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </div>
-                    <div className="w-full flex flex-wrap justify-between gap-4">
-                      <div className="w-full lg:w-full space-y-4">
-                        <Card className=" border">
-                          <CardHeader className="flex flex-row items-center gap-3 font-bold">
-                            Insurance Details
-                          </CardHeader>
-                          <CardContent className="flex flex-wrap gap-4 justify-between w-full">
-                            <div className="flex flex-col flex-wrap w-full lg:w-[45%] gap-4 justify-between">
-                              <div className="w-full space-y-4">
-                                <div>
-                                  <Label htmlFor="insuranceDetails.currentInsurance">
-                                    Current Insurer
-                                  </Label>
-                                  <div className="flex gap-2 w-full">
-                                    <Controller
-                                      name="insuranceDetails.currentInsurance"
-                                      control={control}
-                                      render={({
-                                        field: { onChange, value },
-                                      }) => (
-                                        <Select
-                                          className="react-select w-full"
-                                          classNamePrefix="select"
-                                          id="insuranceDetails.currentInsurance"
-                                          styles={styles}
-                                          name="clear"
-                                          options={InsuranseCompanyList}
-                                          onChange={(selectedOption) => {
-                                            onChange(selectedOption?.value);
-                                            setCurrentInsId(selectedOption?.id);
-                                          }}
-                                          // onChange={(selectedOption) => {
-                                          //   onChange({ companyName: selectedOption.value, companyId: selectedOption.id });
-                                          // }}
-                                          value={InsuranseCompanyList?.find(
-                                            (option) => option?.value === value
-                                          )}
-                                        />
-                                      )}
-                                    />
-                                    {/* <Input
+                                      {/* <Input
                                       type="text"
                                       placeholder="Current Insurer"
                                       {...register(
@@ -1613,19 +1635,19 @@ const JobCardPage = () => {
                                             ?.currentInsurance,
                                       })}
                                     /> */}
-                                  </div>
-                                  {errors?.insuranceDetails
-                                    ?.currentInsurance && (
-                                    <div className="text-destructive mt-2">
-                                      {
-                                        errors?.insuranceDetails
-                                          ?.currentInsurance.message
-                                      }
                                     </div>
-                                  )}
+                                    {errors?.insuranceDetails
+                                      ?.currentInsurance && (
+                                      <div className="text-destructive mt-2">
+                                        {
+                                          errors?.insuranceDetails
+                                            ?.currentInsurance.message
+                                        }
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                              {/* <div className="w-full space-y-4">
+                                {/* <div className="w-full space-y-4">
                                 <div>
                                   <Label htmlFor="insuranceDetails.insuranceType">
                                     Insurance Type
@@ -1656,108 +1678,109 @@ const JobCardPage = () => {
                                   )}
                                 </div>
                               </div> */}
-                              <div className="w-full space-y-4">
-                                <div>
-                                  <Label htmlFor="insuranceDetails.insuranceExpiryDate">
-                                    Insurance Expiry Date
-                                  </Label>
-                                  <div className="flex gap-2 w-full">
-                                    <Input
-                                      type="date"
-                                      placeholder="Expiry Date"
-                                      {...register(
-                                        "insuranceDetails.insuranceExpiryDate"
-                                      )}
-                                      size="lg"
-                                      defaultValue={defaultDate}
-                                      id="insuranceDetails.insuranceExpiryDate"
-                                      className={cn("w-full", {
-                                        "border-destructive":
-                                          errors?.insuranceDetails
-                                            ?.insuranceExpiryDate,
-                                      })}
-                                    />
-                                  </div>
-                                  {errors?.insuranceDetails
-                                    ?.insuranceExpiryDate && (
-                                    <div className="text-destructive mt-2">
-                                      {
-                                        errors?.insuranceDetails
-                                          ?.insuranceExpiryDate.message
-                                      }
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </div>
-                  </>
-                )}
-                {activeStep === 2 && (
-                  <>
-                    <div className="w-full flex flex-wrap justify-between gap-4">
-                      <div className="w-full lg:w-full space-y-4">
-                        <Card className="border">
-                          <CardHeader className="flex flex-row items-center gap-3 font-bold">
-                            Job Details
-                          </CardHeader>
-                          <CardContent className="flex flex-wrap gap-4 justify-between w-full">
-                            <div className="flex flex-col flex-wrap gap-4 w-full lg:w-[45%] justify-between">
-                              <div className="w-full space-y-4">
-                                <div className="w-full lg:w-full">
+                                <div className="w-full space-y-4">
                                   <div>
-                                    <Label htmlFor="details">Notes</Label>
-                                    <div className="flex gap-2 w-full">
-                                      <Textarea
-                                        placeholder="Notes..."
-                                        {...register("details")}
-                                        id="details"
-                                        className={cn("w-full", {
-                                          "border-destructive": errors.details,
-                                        })}
-                                      />
-                                    </div>
-                                    {errors.details && (
-                                      <div className="text-red-500 mt-2">
-                                        {errors.details.message}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="w-full space-y-4">
-                                <div className="w-full lg:w-full">
-                                  <div>
-                                    <Label htmlFor="startDate">
-                                      Start Date
+                                    <Label htmlFor="insuranceDetails.insuranceExpiryDate">
+                                      Insurance Expiry Date
                                     </Label>
                                     <div className="flex gap-2 w-full">
                                       <Input
                                         type="date"
-                                        placeholder="Start Date"
-                                        {...register("startDate")}
+                                        placeholder="Expiry Date"
+                                        {...register(
+                                          "insuranceDetails.insuranceExpiryDate"
+                                        )}
                                         size="lg"
                                         defaultValue={defaultDate}
-                                        id="startDate"
+                                        id="insuranceDetails.insuranceExpiryDate"
                                         className={cn("w-full", {
                                           "border-destructive":
-                                            errors.startDate,
+                                            errors?.insuranceDetails
+                                              ?.insuranceExpiryDate,
                                         })}
                                       />
                                     </div>
-                                    {errors.startDate && (
+                                    {errors?.insuranceDetails
+                                      ?.insuranceExpiryDate && (
                                       <div className="text-destructive mt-2">
-                                        {errors.startDate.message}
+                                        {
+                                          errors?.insuranceDetails
+                                            ?.insuranceExpiryDate.message
+                                        }
                                       </div>
                                     )}
                                   </div>
                                 </div>
                               </div>
-                              {/* <div className="w-full flex flex-wrap justify-between gap-4"> */}
-                              {/* <div className="w-full lg:w-[48%] space-y-2">
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {activeStep === 2 && (
+                    <>
+                      <div className="w-full flex flex-wrap justify-between gap-4">
+                        <div className="w-full lg:w-full space-y-4">
+                          <Card className="border">
+                            <CardHeader className="flex flex-row items-center gap-3 font-bold">
+                              Job Details
+                            </CardHeader>
+                            <CardContent className="flex flex-wrap gap-4 justify-between w-full">
+                              <div className="flex flex-col flex-wrap gap-4 w-full lg:w-[45%] justify-between">
+                                <div className="w-full space-y-4">
+                                  <div className="w-full lg:w-full">
+                                    <div>
+                                      <Label htmlFor="details">Notes</Label>
+                                      <div className="flex gap-2 w-full">
+                                        <Textarea
+                                          placeholder="Notes..."
+                                          {...register("details")}
+                                          id="details"
+                                          className={cn("w-full", {
+                                            "border-destructive":
+                                              errors.details,
+                                          })}
+                                        />
+                                      </div>
+                                      {errors.details && (
+                                        <div className="text-red-500 mt-2">
+                                          {errors.details.message}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="w-full space-y-4">
+                                  <div className="w-full lg:w-full">
+                                    <div>
+                                      <Label htmlFor="startDate">
+                                        Start Date
+                                      </Label>
+                                      <div className="flex gap-2 w-full">
+                                        <Input
+                                          type="date"
+                                          placeholder="Start Date"
+                                          {...register("startDate")}
+                                          size="lg"
+                                          defaultValue={defaultDate}
+                                          id="startDate"
+                                          className={cn("w-full", {
+                                            "border-destructive":
+                                              errors.startDate,
+                                          })}
+                                        />
+                                      </div>
+                                      {errors.startDate && (
+                                        <div className="text-destructive mt-2">
+                                          {errors.startDate.message}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                {/* <div className="w-full flex flex-wrap justify-between gap-4"> */}
+                                {/* <div className="w-full lg:w-[48%] space-y-2">
                                 <Label htmlFor="status">Status</Label>
                                 <Controller
                                   name="status"
@@ -1785,27 +1808,27 @@ const JobCardPage = () => {
                                   )}
                                 />
                               </div> */}
-                            </div>
-                            {/* assigned to come here */}
-                          </CardContent>
-                        </Card>
+                              </div>
+                              {/* assigned to come here */}
+                            </CardContent>
+                          </Card>
+                        </div>
                       </div>
-                    </div>
-                  </>
-                )}
-                {activeStep === 3 && (
-                  <>
-                    <div className="w-full flex flex-wrap justify-between gap-4">
-                      <div className="w-full lg:w-full space-y-4">
-                        <Card className="border">
-                          <CardHeader className="flex flex-row items-center gap-3 font-bold">
-                            Documents Upload
-                          </CardHeader>
-                          <CardContent className="flex flex-wrap gap-4 justify-between w-full">
-                            <div className="flex flex-col flex-wrap gap-4 w-full lg:w-[45%] justify-between">
-                              <div className="w-full space-y-4">
-                                <div className="w-full lg:w-full">
-                                  {/* <div>
+                    </>
+                  )}
+                  {activeStep === 3 && (
+                    <>
+                      <div className="w-full flex flex-wrap justify-between gap-4">
+                        <div className="w-full lg:w-full space-y-4">
+                          <Card className="border">
+                            <CardHeader className="flex flex-row items-center gap-3 font-bold">
+                              Documents Upload
+                            </CardHeader>
+                            <CardContent className="flex flex-wrap gap-4 justify-between w-full">
+                              <div className="flex flex-col flex-wrap gap-4 w-full lg:w-[45%] justify-between">
+                                <div className="w-full space-y-4">
+                                  <div className="w-full lg:w-full">
+                                    {/* <div>
                                     <Label htmlFor="documents.policeReport">
                                       Police Report Upload
                                     </Label>
@@ -1872,257 +1895,242 @@ const JobCardPage = () => {
                                       </div>
                                     )}
                                   </div> */}
-                                  <Label htmlFor="documents.policeReport">
-                                    Police Report Upload
-                                  </Label>
-                                  <Controller
-                                    name="documents.policeReport"
-                                    control={control}
-                                    rules={{
-                                      required: "Police report is required",
-                                    }}
-                                    render={({
-                                      field: { onChange, value },
-                                    }) => (
-                                      <DropZone
-                                        onFileUpload={handleFileUpload}
-                                        value={value}
-                                        onChange={onChange}
-                                        errors={errors?.documents?.policeReport}
-                                        pdf={true}
-                                      />
-                                    )}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex flex-col flex-wrap gap-4 w-full lg:w-[45%] justify-between">
-                              <div className="w-full space-y-4">
-                                <div className="w-full lg:w-full">
-                                  <div>
-                                    <Label htmlFor="dateOfAccident">
-                                      Accident Date
+                                    <Label htmlFor="documents.policeReport">
+                                      Police Report Upload
                                     </Label>
-                                    <div className="flex gap-2 w-full">
-                                      <Input
-                                        type="date"
-                                        placeholder="Accident Date"
-                                        {...register("dateOfAccident")}
-                                        size="lg"
-                                        defaultValue={defaultDate}
-                                        id="dateOfAccident"
-                                      />
-                                    </div>
+                                    <Controller
+                                      name="documents.policeReport"
+                                      control={control}
+                                      rules={{
+                                        required: "Police report is required",
+                                      }}
+                                      render={({
+                                        field: { onChange, value },
+                                      }) => (
+                                        <DropZone
+                                          onFileUpload={handleFileUpload}
+                                          value={value}
+                                          onChange={onChange}
+                                          errors={
+                                            errors?.documents?.policeReport
+                                          }
+                                          pdf={true}
+                                        />
+                                      )}
+                                    />
                                   </div>
                                 </div>
                               </div>
-                              <div className="w-full space-y-4">
-                                <div className="w-full lg:w-full">
-                                  <div>
-                                    <div className="w-full space-y-4">
-                                      <div className="w-full lg:w-full">
-                                        <div className="flex items-center h-5">
-                                          <Controller
-                                            name="isFault"
-                                            control={control}
-                                            render={({ field }) => (
-                                              <input
-                                                id="isFault"
-                                                type="checkbox"
-                                                className="border-gray-200 h-6 w-6 disabled:opacity-50 accent-[#30D5C7] checked:bg-[#30D5C7] rounded-sm text-white mr-2"
-                                                {...field}
-                                                checked={field.value || false}
-                                              />
-                                            )}
-                                          />
-                                          <label htmlFor="isFault">
-                                            At Fault
-                                          </label>
+                              <div className="flex flex-col flex-wrap gap-4 w-full lg:w-[45%] justify-between">
+                                <div className="w-full space-y-4">
+                                  <div className="w-full lg:w-full">
+                                    <div>
+                                      <Label htmlFor="dateOfAccident">
+                                        Accident Date
+                                      </Label>
+                                      <div className="flex gap-2 w-full">
+                                        <Input
+                                          type="date"
+                                          placeholder="Accident Date"
+                                          {...register("dateOfAccident")}
+                                          size="lg"
+                                          defaultValue={defaultDate}
+                                          id="dateOfAccident"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="w-full space-y-4">
+                                  <div className="w-full lg:w-full">
+                                    <div>
+                                      <div className="w-full space-y-4">
+                                        <div className="w-full lg:w-full">
+                                          <div className="flex items-center h-5">
+                                            <Controller
+                                              name="isFault"
+                                              control={control}
+                                              render={({ field }) => (
+                                                <input
+                                                  id="isFault"
+                                                  type="checkbox"
+                                                  className="border-gray-200 h-6 w-6 disabled:opacity-50 accent-[#30D5C7] checked:bg-[#30D5C7] rounded-sm text-white mr-2"
+                                                  {...field}
+                                                  checked={field.value || false}
+                                                />
+                                              )}
+                                            />
+                                            <label htmlFor="isFault">
+                                              At Fault
+                                            </label>
+                                          </div>
                                         </div>
                                       </div>
                                     </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>
+                            </CardContent>
+                          </Card>
+                        </div>
                       </div>
-                    </div>
-                    <div className="w-full flex flex-wrap justify-between gap-4">
-                      <div className="w-full lg:w-full space-y-4">
-                        <Card className="border">
-                          <CardHeader className="flex flex-row items-center gap-3 font-bold">
-                            Photo Upload
-                          </CardHeader>
-                          <CardContent className="flex flex-wrap gap-4 justify-between w-full">
-                            <div className="flex flex-col flex-wrap gap-4 w-full lg:w-[45%] justify-between">
-                              <div className="w-full space-y-4">
-                                <div className="w-full lg:w-full">
-                                  <div>
-                                    <Label htmlFor="documents.beforePhotos">
-                                      Upload Photo
-                                    </Label>
-                                    <Controller
-                                    name="documents.beforePhotos"
-                                    control={control}
-                                    rules={{
-                                      required: "Before Photo is required",
-                                    }}
-                                    render={({
-                                      field: { onChange, value },
-                                    }) => (
-                                      <DropZone
-                                        onFileUpload={handleBeforePhotoFileUpload}
-                                        value={value}
-                                        onChange={onChange}
-                                        errors={errors?.documents?.beforePhotos}
-                                      />
-                                    )}
-                                  />
-                                    {/* <div className="flex gap-2 w-full">
-                                      <Input
-                                        type="file"
-                                        {...register("documents.beforePhotos")}
-                                        onChange={handleFileChange2}
-                                        size="lg"
-                                        id="documents.beforePhotos"
-                                        className={cn("w-full", {
-                                          "border-destructive":
-                                            errors.documents?.beforePhotos,
-                                        })}
-                                        multiple // Allow multiple files to be selected
+                      <div className="w-full flex flex-wrap justify-between gap-4">
+                        <div className="w-full lg:w-full space-y-4">
+                          <Card className="border">
+                            <CardHeader className="flex flex-row items-center gap-3 font-bold">
+                              Photo Upload
+                            </CardHeader>
+                            <CardContent className="flex flex-wrap gap-4 justify-between w-full">
+                              <div className="flex flex-col flex-wrap gap-4 w-full lg:w-[45%] justify-between">
+                                <div className="w-full space-y-4">
+                                  <div className="w-full lg:w-full">
+                                    <div>
+                                      <Label htmlFor="documents.beforePhotos">
+                                        Upload Photo
+                                      </Label>
+                                      <Controller
+                                        name="documents.beforePhotos"
+                                        control={control}
+                                        rules={{
+                                          required: "Before Photo is required",
+                                        }}
+                                        render={({
+                                          field: { onChange, value },
+                                        }) => (
+                                          <DropZone
+                                            onFileUpload={
+                                              handleBeforePhotoFileUpload
+                                            }
+                                            value={value}
+                                            onChange={onChange}
+                                            errors={
+                                              errors?.documents?.beforePhotos
+                                            }
+                                          />
+                                        )}
                                       />
                                     </div>
-                                    {errors?.documents?.beforePhotos && (
-                                      <div className="text-red-500 mt-2">
-                                        {
-                                          errors?.documents?.beforePhotos
-                                            ?.message
-                                        }
-                                      </div>
-                                    )}
-                                    {jobcardData?.documents?.beforePhotos
-                                      ?.length > 0 && (
-                                      <div className="mt-2 grid grid-cols-3 gap-2">
-                                        {jobcardData?.documents?.beforePhotos?.map(
-                                          (photo, index) => (
-                                            <div
-                                              key={index}
-                                              className="relative"
-                                            >
-                                              <img
-                                                src={photo}
-                                                alt={`File Preview ${
-                                                  index + 1
-                                                }`}
-                                                className="w-32 h-32 object-cover"
-                                              />
-                                            </div>
-                                          )
-                                        )}
-                                      </div>
-                                    )}
-
-                                    {filePreviews1?.length > 0 && (
-                                      <div className="mt-2 grid grid-cols-3 gap-2">
-                                        {filePreviews1?.map(
-                                          (preview, index) => (
-                                            <div
-                                              key={index}
-                                              className="relative"
-                                            >
-                                              <img
-                                                src={preview}
-                                                alt={`File Preview ${
-                                                  index + 1
-                                                }`}
-                                                className="w-32 h-32 object-cover"
-                                              />
-                                              <button
-                                                onClick={(e) => {
-                                                  e.preventDefault();
-                                                  handleDeleteFile1(index);
-                                                }}
-                                                className="absolute top-0 left-0 p-1 bg-red-500 rounded-full text-white"
-                                              >
-                                                X
-                                              </button>
-                                            </div>
-                                          )
-                                        )}
-                                      </div>
-                                    )} */}
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>
+                            </CardContent>
+                          </Card>
+                        </div>
                       </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-              <CardFooter className="flex justify-end gap-4 flex-wrap">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  type="button"
-                  onClick={handleBack}
-                  disabled={activeStep === 0}
-                  className={cn({
-                    hidden: activeStep === 0,
-                  })}
-                >
-                  Back
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (activeStep === 0 && !jobCardId) {
-                      handleSubmit((data) => onSubmit(data, false))(); // Submit the form for the first step without redirect
-                    } else if (activeStep === 0 && paramId) {
-                      handleSubmit((data) => onSubmit(data, false))();
-                      // setActiveStep((prevActiveStep) => prevActiveStep + 1);
-                    } else {
-                      handleSubmit((data) => onSubmit(data, false))();
-                      // setActiveStep((prevActiveStep) => prevActiveStep + 1);
-                    }
-                  }}
-                  className={cn("ml-auto", {
-                    hidden: activeStep >= 3,
-                  })}
-                >
-                  Next
-                </Button>
-                <Button
-                  size="sm"
-                  type="submit"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleSubmit((data) => onSubmit(data, true))(); // Submit the form for the final step with redirect
-                  }}
-                  className={cn("ml-auto", {
-                    hidden: activeStep < 3,
-                  })}
-                >
-                  {UpdateLoading ? (
-                    <div className="flex items-center">
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Loading ...
-                    </div>
-                  ) : (
-                    "Submit"
+                      <div className="flex items-center h-5 mt-4">
+                        <Controller
+                          name="alreadyHasClaimNumber"
+                          control={control}
+                          render={({ field }) => (
+                            <input
+                              id="alreadyHasClaimNumber"
+                              type="checkbox"
+                              className="border-gray-200 h-6 w-6 disabled:opacity-50 accent-[#30D5C7] checked:bg-[#30D5C7] rounded-sm text-white mr-2"
+                              {...field}
+                              checked={field.value || false}
+                              onChange={(e) => {
+                                handleCheckboxChange(e);
+                                field.onChange(e);
+                              }}
+                            />
+                          )}
+                        />
+                        <label htmlFor="alreadyHasClaimNumber">
+                          Already has Claim Number
+                        </label>
+                      </div>
+                    </>
                   )}
-                </Button>
-              </CardFooter>
-            </form>
-          </Card>
+                </CardContent>
+                <CardFooter className="flex justify-end gap-4 flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    onClick={handleBack}
+                    disabled={activeStep === 0}
+                    className={cn({
+                      hidden: activeStep === 0,
+                    })}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (activeStep === 0 && !jobCardId) {
+                        handleSubmit((data) => onSubmit(data, false))(); // Submit the form for the first step without redirect
+                      } else if (activeStep === 0 && paramId) {
+                        handleSubmit((data) => onSubmit(data, false))();
+                        // setActiveStep((prevActiveStep) => prevActiveStep + 1);
+                      } else {
+                        handleSubmit((data) => onSubmit(data, false))();
+                        // setActiveStep((prevActiveStep) => prevActiveStep + 1);
+                      }
+                    }}
+                    className={cn("ml-auto", {
+                      hidden: activeStep >= 3,
+                    })}
+                  >
+                    Next
+                  </Button>
+                  <Button
+                    size="sm"
+                    type="submit"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleSubmit((data) => onSubmit(data, true))(); // Submit the form for the final step with redirect
+                    }}
+                    className={cn("ml-auto", {
+                      hidden: activeStep < 3,
+                    })}
+                  >
+                    {UpdateLoading ? (
+                      <div className="flex items-center">
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading ...
+                      </div>
+                    ) : (
+                      "Submit"
+                    )}
+                  </Button>
+                </CardFooter>
+              </form>
+            </Card>
+          </div>
         </div>
       </div>
-    </div>
+      <Dialog
+        open={modalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleModalClose();
+          } else {
+            setModalOpen(true);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enter Insurance Claim Number</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Label htmlFor="insuranceClaimNumber">Insurance Claim Number</Label>
+            <Input
+              id="insuranceClaimNumber"
+              type="text"
+              value={insuranceClaimNumber}
+              onChange={(e) => setInsuranceClaimNumber(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button onClick={handleModalClose}>Cancel</Button>
+            <Button onClick={handleModalSubmit}>Update</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
