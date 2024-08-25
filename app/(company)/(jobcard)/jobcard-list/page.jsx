@@ -27,7 +27,7 @@ import { useSession } from "next-auth/react";
 import { getUserMeAction } from "@/action/auth-action";
 import {
   getJobCardListAction,
-  updateJobCardAction
+  updateJobCardAction,
 } from "@/action/employeeAction/jobcard-action";
 import { Badge } from "@/components/ui/badge";
 import { DeleteJobCard } from "@/config/companyConfig/jobcard.config";
@@ -57,6 +57,8 @@ const JobCardListPage = () => {
   const [statusCall, setStatusCall] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [expectedStartDate, setExpectedStartDate] = useState("");
+  const [expectedEndDate, setExpectedEndDate] = useState("");
   const [selectedRows, setSelectedRows] = useState([]);
 
   const role = session?.role;
@@ -67,7 +69,6 @@ const JobCardListPage = () => {
     const currentPath = window.location.href;
     // console.log(currentPath,"currentPath");
     if (currentPath.includes("/inprogress-jobcard")) {
-      console.log("currentPath", currentPath);
       setStatus("In Progress");
     } else if (currentPath.includes("/completed-jobcard")) {
       setStatus("completed");
@@ -75,17 +76,6 @@ const JobCardListPage = () => {
       setStatus("");
     }
   }, []);
-
-  // useEffect(() => {
-  //   if (router.isReady) {
-  //     const { statusOpen } = router.query;
-  //     console.log(statusOpen, "statusOpen");
-  //     if (statusOpen) {
-  //       console.log(statusOpen,"statusOpen");
-  //       setStatus(statusOpen);
-  //     }
-  //   }
-  // }, [router.isReady, router.query]);
   const {
     data: userData,
     error: userError,
@@ -96,6 +86,7 @@ const JobCardListPage = () => {
     enabled: !!session?.jwt, // Only run the query if the token is available
   });
   const CREATED_USER_ROLE = userData?.data?.userId?.designation;
+  const CURRENT_USER_ID = userData?.data?.userId?._id;
 
   const PERMISSION_VIEW_JOBCARD =
     userData?.data?.userId?.permissionId?.jobCard?.view;
@@ -112,10 +103,10 @@ const JobCardListPage = () => {
   //   isCompany ||
   //   (PERMISSION_CREATE_JOBCARD && isEmployee && CREATED_USER_ROLE === "CSR");
   const canCreateJobCard =
-  isCompany ||
-    PERMISSION_CREATE_JOBCARD &&
-    isEmployee &&
-    (CREATED_USER_ROLE === "CSR" || CREATED_USER_ROLE === "Surveyor");
+    isCompany ||
+    (PERMISSION_CREATE_JOBCARD &&
+      isEmployee &&
+      (CREATED_USER_ROLE === "CSR" || CREATED_USER_ROLE === "Surveyor"));
 
   const canUpdateJobCard =
     isCompany || (PERMISSION_UPDATE_JOBCARD && isEmployee);
@@ -197,7 +188,8 @@ const JobCardListPage = () => {
       accessorKey: "designation",
       header: () => <div className="text-center">Department</div>,
       cell: ({ row }) => {
-        const designation = row?.original?.currentAssignedTo?.employeeId?.designation
+        const designation =
+          row?.original?.currentAssignedTo?.employeeId?.designation;
 
         return (
           <div className="text-center">
@@ -220,8 +212,8 @@ const JobCardListPage = () => {
       accessorKey: "assigny",
       header: "Name of staff",
       cell: ({ row }) => {
-        const name = row?.original?.currentAssignedTo?.employeeId?.firstName
-        const lastName = row?.original?.currentAssignedTo?.employeeId?.lastName
+        const name = row?.original?.currentAssignedTo?.employeeId?.firstName;
+        const lastName = row?.original?.currentAssignedTo?.employeeId?.lastName;
         return (
           <div className="font-medium text-card-foreground/80">
             <div className="flex space-x-3  rtl:space-x-reverse items-center">
@@ -229,9 +221,9 @@ const JobCardListPage = () => {
                 {name && lastName ? `${name} ${lastName}` : "-"}
               </span>
             </div>
-          </div>)
-      }
-      ,
+          </div>
+        );
+      },
     },
 
     {
@@ -299,6 +291,21 @@ const JobCardListPage = () => {
       },
     },
     {
+      accessorKey: "expectationDate",
+      header: () => <div className="text-center">Expected Completion Date</div>,
+      cell: ({ row }) => {
+        const date = new Date(row?.original?.expectationDate);
+        const formattedDate = row?.original?.expectationDate
+          ? `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`
+          : "-";
+    
+        return <div className="text-center">{formattedDate}</div>;
+      },
+      filterFn: (row, id, value) => {
+        return value?.includes(row.getValue(id));
+      },
+    },    
+    {
       header: "Actions",
       id: "actions",
       enableHiding: false,
@@ -307,6 +314,8 @@ const JobCardListPage = () => {
         const handleStopPropagation = (e) => {
           e.stopPropagation();
         };
+        const currentAssignedStaff =
+          row?.original?.currentAssignedTo?.employeeId?._id;
 
         return (
           <div className="flex gap-3 items-center justify-end">
@@ -332,10 +341,11 @@ const JobCardListPage = () => {
                     handleStopPropagation(e);
                   }}
                   disabled={!canViewJobCard}
-                  className={`${canViewJobCard
-                    ? "text-default-500"
-                    : "text-default-300 cursor-not-allowed"
-                    }`}
+                  className={`${
+                    canViewJobCard
+                      ? "text-default-500"
+                      : "text-default-300 cursor-not-allowed"
+                  }`}
                 >
                   <Icon icon="heroicons:eye" className="h-4 w-4 mr-2" />
                   Preview
@@ -345,11 +355,15 @@ const JobCardListPage = () => {
                     handleEditClick(jobCardId);
                     handleStopPropagation(e);
                   }}
-                  disabled={!canUpdateJobCard}
-                  className={`${canUpdateJobCard
-                    ? "text-default-500"
-                    : "text-default-300 cursor-not-allowed"
-                    }`}
+                  disabled={
+                    !canUpdateJobCard || // Enable if employee has permission and assignedStaff
+                    (isEmployee && currentAssignedStaff !== CURRENT_USER_ID)
+                  }
+                  className={`${
+                    canUpdateJobCard
+                      ? "text-default-500"
+                      : "text-default-300 cursor-not-allowed"
+                  }`}
                 >
                   <Icon
                     icon="heroicons:pencil-square"
@@ -363,10 +377,11 @@ const JobCardListPage = () => {
                     handleStopPropagation(e);
                   }}
                   disabled={!canDeleteJobCard}
-                  className={`${canDeleteJobCard
-                    ? "text-default-500"
-                    : "text-default-300 cursor-not-allowed"
-                    }`}
+                  className={`${
+                    canDeleteJobCard
+                      ? "text-default-500"
+                      : "text-default-300 cursor-not-allowed"
+                  }`}
                 >
                   <Icon icon="heroicons:trash" className="h-4 w-4 mr-2" />
                   Delete
@@ -446,6 +461,8 @@ const JobCardListPage = () => {
         status: status || "",
         startDate: startDate || "",
         endDate: endDate || "",
+        completeStartDate: expectedStartDate || "",
+        completeEndDate: expectedEndDate || "",
       }).finally(() => {
         setTableLoading(false);
         setComponentLoading(false);
@@ -478,11 +495,15 @@ const JobCardListPage = () => {
   const handleStatusChange = (e) => setStatus(e.target.value);
   const handleStartDateChange = (e) => setStartDate(e.target.value);
   const handleEndDateChange = (e) => setEndDate(e.target.value);
+  const handleExpectedStartDateChange = (e) => setExpectedStartDate(e.target.value);
+  const handleExpectedEndDateChange = (e) => setExpectedEndDate(e.target.value);
 
   const handleReset = () => {
     setStatus("");
     setStartDate("");
     setEndDate("");
+    setExpectedStartDate("");
+    setExpectedEndDate("");
     requestAnimationFrame(() => {
       refetch();
     });
@@ -532,9 +553,13 @@ const JobCardListPage = () => {
               status={status}
               startDate={startDate}
               endDate={endDate}
+              expectedStartDate={expectedStartDate}
+              expectedEndDate={expectedEndDate}
               handleStatusChange={handleStatusChange}
               handleStartDateChange={(date) => setStartDate(date)}
+              handleExpectedStartDateChange={(date) => setExpectedStartDate(date)}
               handleEndDateChange={(date) => setEndDate(date)}
+              handleExpectedEndDateChange={(date) => setExpectedEndDate(date)}
               handleReset={handleReset}
               refetch={refetch}
               hiddenFilter={true}

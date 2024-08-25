@@ -36,6 +36,7 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
   const role = userData?.data?.userId?.role;
   const designation = userData?.data?.userId?.designation;
   const QuotationApproved = jobcardData?.isQuotationApproved;
+  const isJobAssignPermission = userData?.data?.userId?.permissionId?.jobCard?.reAssign
 
   const isSelectEnabled =
     QuotationApproved &&
@@ -90,7 +91,8 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
       return await updateJobCardAction(jobCardId, formData);
     },
     onSuccess: (response) => {
-      toast.success(`Job Card Assigned to  ${initialAssignedDesignation}`);
+      // toast.success(`Job Card Assigned to  ${initialAssignedDesignation}`);
+      toast.success(`Job Card Assigned to ${response?.data?.currentAssignedTo?.employeeId?.firstName}  ${response?.data?.currentAssignedTo?.employeeId?.lastName}`);
       setSelectedEmployee(null);
       refetch();
     },
@@ -211,7 +213,7 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
   ];
 
   const isAssignedEnabled =
-    role === "company" || (role === "employee" && designation === "CSR");
+    role === "company" || (role === "employee" && designation === "CSR" && isJobAssignPermission);
     
   const hasStatusChanged =
     initialStatus !== null && initialStatus !== currentStatus;
@@ -328,7 +330,7 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
                     </div>
                     <div className="flex flex-wrap gap-4">
                       <div className="w-full md:w-[48%] lg:w-[48%]">
-                        <Label htmlFor="assignedEmployeeId" className="font-bold">
+                        <Label htmlFor="assignedEmployeeId" className="font-bold  disabled">
                           Assigned To
                         </Label>
                         <Controller
@@ -348,6 +350,12 @@ const JobDetails = ({ jobcardData, jobCardId, refetch }) => {
                                 (option) => option.value === value
                               )}
                               isDisabled={!isAssignedEnabled}
+                              styles={{
+                                control: (provided) => ({
+                                  ...provided,
+                                  opacity: isAssignedEnabled ? 1 : 0.5,
+                                }),
+                              }}
                             />
                           )}
                         />

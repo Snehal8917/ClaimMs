@@ -17,6 +17,7 @@ const FileUploaderMultipleFrontBack = ({
     imgHeight = 200,
     maxFileNum = 2,
     errors,
+    loadingError=false
 }) => {
     const [files, setFiles] = useState(value || []);
     const [errorMessages, setErrorMessages] = useState([]);
@@ -261,7 +262,7 @@ const FileUploaderMultipleFrontBack = ({
                                 </>
                             )}
 
-                            <div className="flex justify-center items-center">
+                            <div className="flex justify-center items-center h-36 w-auto">
                                 <MdAddAPhoto
                                     style={{
                                         fontSize: "30px",
@@ -287,7 +288,7 @@ const FileUploaderMultipleFrontBack = ({
                 </div>
             )}
 
-            {errorMessagesUp && (
+            {errorMessagesUp && !loadingError &&(
                 <label style={{ color: "red", display: "block" }}>
                    {errorMessagesUp}
                 </label>

@@ -230,20 +230,46 @@ const QuotationsList = () => {
         return value?.includes(row.getValue(id));
       },
     },
+    // {
+    //   accessorKey: "isEmailSeen",
+    //   header: () => <div className="text-center">Email Status</div>,
+    //   cell: ({ row }) => (
+    //     <div className="text-center">
+    //       <Badge
+    //         variant="soft"
+    //         color={row?.original?.isEmailSeen ? "success" : "destructive"}
+    //         className="capitalize"
+    //       >
+    //         {row?.original?.isEmailSeen ? "Seen" : "Not Seen"}
+    //       </Badge>
+    //     </div>
+    //   ),
+    //   filterFn: (row, id, value) => {
+    //     return value?.includes(row.getValue(id));
+    //   },
+    // },
     {
       accessorKey: "isEmailSeen",
       header: () => <div className="text-center">Email Status</div>,
-      cell: ({ row }) => (
-        <div className="text-center">
-          <Badge
-            variant="soft"
-            color={row?.original?.isEmailSeen ? "success" : "destructive"}
-            className="capitalize"
-          >
-            {row?.original?.isEmailSeen ? "Seen" : "Not Seen"}
-          </Badge>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const { isEmailSent, isEmailSeen } = row.original;
+    
+        let statusText = "Not Sent";
+        let badgeColor = "neutral"; // Assuming "neutral" is an available color variant
+    
+        if (isEmailSent) {
+          statusText = isEmailSeen ? "Seen" : "Not Seen";
+          badgeColor = isEmailSeen ? "success" : "destructive";
+        }
+    
+        return (
+          <div className="text-center">
+            <Badge variant="soft" color={badgeColor} className="capitalize">
+              {statusText}
+            </Badge>
+          </div>
+        );
+      },
       filterFn: (row, id, value) => {
         return value?.includes(row.getValue(id));
       },
@@ -316,7 +342,7 @@ const QuotationsList = () => {
       cell: ({ row }) => {
         const jobCardId = row?.original?._id;
         const statusBtn = row?.original?.status;
-        const isEditable = userData.data.userId.designation == "Surveyor" || userData.data.userId.role == "company"
+        const isEditable = userData?.data?.userId?.designation == "Surveyor" || userData?.data?.userId?.role == "company"
         return (
           <div className="flex gap-3 items-center justify-end">
             <TooltipProvider>

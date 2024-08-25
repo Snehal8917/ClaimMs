@@ -11,6 +11,10 @@ export const quotaionFormSchema = z.object({
   quCustomer: z.string().refine((value) => value.trim() !== "", {
     message: "customer is required",
   }),
+  isMailSent: z.boolean(),
+  carPlateNumber: z.string().refine((value) => value.trim() !== "", {
+    message: "plate number is required",
+  }),
   quCar: z.string().refine((value) => value.trim() !== "", {
     message: "car is required",
   }),
@@ -50,6 +54,7 @@ export const quotaionFormSchema = z.object({
   ),
   quStatus: z.string().optional(),
   quoLpo: z.array(z.any()).optional(),
+  quoNotes: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.quStatus === 'Approved' && (!data.quoLpo || data.quoLpo.length === 0)) {
     ctx.addIssue({
@@ -73,11 +78,13 @@ export const quotationFormSchemaSection = z.object({
       message: "Date and time is required",
     })
     .transform((str) => new Date(str)), // Transform the string to a Date object
-
+    isMailSent: z.boolean(),
   quCustomer: z.string().refine((value) => value.trim() !== "", {
     message: "Customer is required",
   }),
-
+  carPlateNumber: z.string().refine((value) => value.trim() !== "", {
+    message: "plate number is required",
+  }),
   quCar: z.string().refine((value) => value.trim() !== "", {
     message: "Car is required",
   }),
@@ -110,28 +117,46 @@ export const quotationFormSchemaSection = z.object({
           })
         })
       ),
-      price: z.string().refine((value) => value.trim() !== "", {
-        message: "price is required",
-      }).refine(
-        (value) => {
-          return /^\d+(\.\d{1,2})?$/.test(value);
-        },
-        {
-          message: "valid price",
-        }
-      ),
+
     })
+  ),
+  totalLaborParts: z.string().optional(),
+
+  totalSectionParts: z.string().optional(),
+  totalGrandParts: z.string().refine((value) => value.trim() !== "", {
+    message: "Grand-Total is required",
+  }).refine(
+    (value) => {
+      return /^\d+(\.\d{1,2})?$/.test(value);
+    },
+    {
+      message: "valid number!",
+    }
   ),
 
   quStatus: z.string().optional(),
 
-  quoLpo: z.array(z.any()).optional(), // Array of any type, adjust as per actual type
+  quoLpo: z.array(z.any()).optional(),
+  quoNotes: z.string().optional(),
+
 
 }).superRefine((data, ctx) => {
   if (data.quStatus === "Approved" && (!data.quoLpo || data.quoLpo.length === 0)) {
     ctx.addIssue({
       path: ["quoLpo"],
       message: "LPO required when status is Approved",
+    });
+  }
+  if (data.totalLaborParts && !/^\d+(\.\d{1,2})?$/.test(data.totalLaborParts)) {
+    ctx.addIssue({
+      path: ["totalLaborParts"],
+      message: "Must be a valid number!",
+    });
+  }
+  if (data.totalSectionParts && !/^\d+(\.\d{1,2})?$/.test(data.totalSectionParts)) {
+    ctx.addIssue({
+      path: ["totalSectionParts"],
+      message: "Must be a valid number!",
     });
   }
 });

@@ -27,6 +27,8 @@ export const useCreateQuotaion = ({ CsrList }) => {
 
   const customerCareRepresentative = CsrList[0]?.value || "";
 
+
+
   const {
     isLoading: isLoadingJobCardData,
     isError: isErrorJobCardData,
@@ -73,6 +75,8 @@ export const useCreateQuotaion = ({ CsrList }) => {
   });
 
   //update mutaion
+  console.log("CsrList", jobcardData)
+ // console.log("quotationData?.sendMailToInsuance", quotationData?.sendMailToInsuance);
 
   const updateQuotationMutation = useMutation({
     mutationKey: ["updateQuotationMutation"],
@@ -165,8 +169,14 @@ export const useCreateQuotaion = ({ CsrList }) => {
 
 
 
- 
+
+
+  // console.log("quotationData?.totalPartsCost", quotationData);
+  //console.log("quotationData?.laborCharge", quotationData?.laborCharge);
+
   const handleQuotationForm = async (values) => {
+
+    //console.log(values, "values");
 
     setLoading(true);
     const dateTime = new Date(values?.quDateAndTime);
@@ -191,6 +201,12 @@ export const useCreateQuotaion = ({ CsrList }) => {
       quStatus,
       quoLpo,
       sectionItems,
+      totalLaborParts,
+      totalSectionParts,
+      quoNotes,
+      totalGrandParts,
+      carPlateNumber,
+      isMailSent
     } = values;
 
     const payLoad = {
@@ -205,6 +221,12 @@ export const useCreateQuotaion = ({ CsrList }) => {
       jobCardId: quJobCard,
       status: snewtatus || quStatus,
       sectionItemList: sectionItems,
+      totalPartsCost: totalSectionParts,
+      laborCharge: totalLaborParts,
+      notes: quoNotes,
+      plateNumber: carPlateNumber,
+      totalCost: totalGrandParts,
+      sendMailToInsuance: isMailSent
     };
 
     if (quoLpo && typeof quoLpo === "object") {
@@ -225,6 +247,12 @@ export const useCreateQuotaion = ({ CsrList }) => {
           jobCardId: quJobCard,
           status: snewtatus || quStatus,
           sectionItemList: sectionItems,
+          totalPartsCost: totalSectionParts,
+          laborCharge: totalLaborParts,
+          notes: quoNotes,
+          totalCost: totalGrandParts,
+          plateNumber: carPlateNumber,
+          sendMailToInsuance: isMailSent
         };
 
         await updateSpQuotationMutation.mutateAsync(payLoadUpdate);
@@ -241,6 +269,12 @@ export const useCreateQuotaion = ({ CsrList }) => {
           jobCardId: quJobCard,
           status: quStatus,
           sectionItemList: sectionItems,
+          totalPartsCost: totalSectionParts,
+          laborCharge: totalLaborParts,
+          notes: quoNotes,
+          totalCost: totalGrandParts,
+          plateNumber: carPlateNumber,
+          sendMailToInsuance: isMailSent
         };
         if (quotationData?.isSupplmenteryQuotation) {
           await updateSpQuotationMutation.mutateAsync(payLoadUpdate);
@@ -264,6 +298,12 @@ export const useCreateQuotaion = ({ CsrList }) => {
           jobCardId: quJobCard,
           status: quStatus,
           sectionItemList: sectionItems,
+          totalPartsCost: totalSectionParts,
+          laborCharge: totalLaborParts,
+          notes: quoNotes,
+          totalCost: totalGrandParts,
+          plateNumber: carPlateNumber,
+          sendMailToInsuance: isMailSent
         };
 
         await updateQuotationMutation.mutateAsync(payLoadUpdate);
@@ -288,22 +328,40 @@ export const useCreateQuotaion = ({ CsrList }) => {
         quDateAndTime: formatDate(quotationData?.date) || "",
         quCustomer: quotationData?.customer?._id || "",
         quCar: quotationData?.car?._id || "",
+        carPlateNumber: quotationData?.car?.plateNumber || "",
         quInsuranceCom: quotationData?.insuranceCompany?._id || "",
         quJobCard: quotationData?.jobCardId?._id || "",
         qudaystocomplete: quotationData?.daysToQuote || "",
         quCustomerCareRepresentative: quotationData?.CCRId || "",
-
+        isMailSent: quotationData?.sendMailToInsuance,
         itemList: quotationData?.listOfItems?.length > 0 ? quotationData?.listOfItems : [
           { itemName: "", itemPrice: "" },
         ],
         quStatus: quotationData?.status || "Draft",
         quoLpo: quotationData?.lpo || [],
+        quoNotes: quotationData?.notes || "",
+        // totalSectionParts: String(quotationData?.totalPartsCost) || "",
+        totalSectionParts: (quotationData?.totalPartsCost && quotationData.totalPartsCost !== 0)
+          ? String(quotationData.totalPartsCost)
+          : "",
+        totalLaborParts: (quotationData?.laborCharge && quotationData.laborCharge !== 0)
+          ? String(quotationData.laborCharge)
+          : "",
+        totalGrandParts: String(quotationData?.totalCost) || "",
         sectionItems: quotationData?.sectionItemList?.length > 0 ?
           quotationData.sectionItemList :
           [{
-            sectionName: "",
-            itemslist: [{ itemName: "" }], price: ""
-          }]
+            sectionName: "Change parts",
+            itemsList: [{ itemName: "" }],
+          },
+          {
+            sectionName: "Repair Parts",
+            itemsList: [{ itemName: "" }],
+          },
+          {
+            sectionName: "Labor & Materials",
+            itemsList: [{ itemName: "" }],
+          },]
       };
     }
     else if (quotaionsId && quotationData) {
@@ -311,8 +369,10 @@ export const useCreateQuotaion = ({ CsrList }) => {
         quDateAndTime: formatDate(quotationData?.date) || "",
         quCustomer: quotationData?.customer?._id || "",
         quCar: quotationData?.car?._id || "",
+        carPlateNumber: quotationData?.car?.plateNumber || "",
         quInsuranceCom: quotationData?.insuranceCompany?._id || "",
         quJobCard: quotationData?.jobCardId?._id || "",
+        isMailSent: quotationData?.sendMailToInsuance || true,
         // quJobCard: quotationData?.jobCardId?.jobCardNumber,
         qudaystocomplete: quotationData?.daysToQuote || "",
         quCustomerCareRepresentative: quotationData?.CCRId || "",
@@ -321,30 +381,62 @@ export const useCreateQuotaion = ({ CsrList }) => {
         ],
         quStatus: quotationData?.status || "Draft",
         quoLpo: quotationData?.lpo || [],
+        quoNotes: quotationData?.notes || "",
+        totalSectionParts: (quotationData?.totalPartsCost && quotationData.totalPartsCost !== 0)
+          ? String(quotationData.totalPartsCost)
+          : "",
+        totalLaborParts: (quotationData?.laborCharge && quotationData.laborCharge !== 0)
+          ? String(quotationData.laborCharge)
+          : "",
+        totalGrandParts: String(quotationData?.totalCost) || "",
         sectionItems: quotationData?.sectionItemList?.length > 0 ?
           quotationData.sectionItemList :
           [{
-            sectionName: "",
-            itemslist: [{ itemName: "" }], price: ""
-          }]
+            sectionName: "Change parts",
+            itemsList: [{ itemName: "" }],
+          },
+          {
+            sectionName: "Repair Parts",
+            itemsList: [{ itemName: "" }],
+          },
+          {
+            sectionName: "Labor & Materials",
+            itemsList: [{ itemName: "" }],
+          },]
       };
     } else if (supplementId && quotationData) {
       return {
         quDateAndTime: formatDate(quotationData?.date) || "",
         quCustomer: quotationData?.customer?._id || "",
         quCar: quotationData?.car?._id || "",
+        carPlateNumber: quotationData?.car?.plateNumber || "",
         quInsuranceCom: quotationData?.insuranceCompany?._id || "",
-
+        quoNotes: quotationData?.notes || "",
+        isMailSent: quotationData?.sendMailToInsuance || true,
+        totalSectionParts: (quotationData?.totalPartsCost && quotationData.totalPartsCost !== 0)
+          ? String(quotationData.totalPartsCost)
+          : "",
+        totalLaborParts: (quotationData?.laborCharge && quotationData.laborCharge !== 0)
+          ? String(quotationData.laborCharge)
+          : "",
+        totalGrandParts: String(quotationData?.totalCost) || "",
         quJobCard: quotationData?.jobCardId?._id || "",
         qudaystocomplete: quotationData?.daysToQuote || "",
         quCustomerCareRepresentative: quotationData?.CCRId || "",
         itemList: [{ itemName: "", itemPrice: "" }],
         sectionItems: [
           {
-            sectionName: "",
+            sectionName: "Change parts",
             itemsList: [{ itemName: "" }],
-            price: "",
           },
+          {
+            sectionName: "Repair Parts",
+            itemsList: [{ itemName: "" }],
+          },
+          {
+            sectionName: "Labor & Materials",
+            itemsList: [{ itemName: "" }],
+          }
         ],
         quStatus: quotationData?.status || "Draft",
         quoLpo: quotationData?.lpo || [],
@@ -354,6 +446,8 @@ export const useCreateQuotaion = ({ CsrList }) => {
         quDateAndTime: formatDate(quotationData?.date) || "",
         quCustomer: quotationData?.customer?._id || "",
         quCar: quotationData?.car?._id || "",
+        isMailSent: quotationData?.sendMailToInsuance,
+        carPlateNumber: quotationData?.car?.plateNumber || "",
         quInsuranceCom: quotationData?.insuranceCompany?._id || "",
         quJobCard: quotationData?.jobCardId?._id || "",
         qudaystocomplete: quotationData?.daysToQuote || "",
@@ -364,24 +458,49 @@ export const useCreateQuotaion = ({ CsrList }) => {
         ],
         quStatus: "Pending",
         quoLpo: quotationData?.lpo || [],
+        quoNotes: quotationData?.notes || "",
+        totalSectionParts: (quotationData?.totalPartsCost && quotationData.totalPartsCost !== 0)
+          ? String(quotationData.totalPartsCost)
+          : "",
+        totalLaborParts: (quotationData?.laborCharge && quotationData.laborCharge !== 0)
+          ? String(quotationData.laborCharge)
+          : "",
+        totalGrandParts: String(quotationData?.totalCost) || "",
         sectionItems: quotationData?.sectionItemList?.length > 0 ?
           quotationData.sectionItemList :
           [{
-            sectionName: "",
-            itemslist: [{ itemName: "" }], price: ""
-          }]
+            sectionName: "Change parts",
+            itemsList: [{ itemName: "" }],
+          },
+          {
+            sectionName: "Repair Parts",
+            itemsList: [{ itemName: "" }],
+          },
+          {
+            sectionName: "Labor & Materials",
+            itemsList: [{ itemName: "" }],
+          },]
       };
     } else if (viewQuotationId && quotationData) {
       return {
         quDateAndTime: formatDate(quotationData?.date) || "",
         quCustomer: quotationData?.customer?._id || "",
         quCar: quotationData?.car?._id || "",
+        isMailSent: quotationData?.sendMailToInsuance,
+        carPlateNumber: quotationData?.car?.plateNumber || "",
         quInsuranceCom: quotationData?.insuranceCompany?._id || "",
         quJobCard: quotationData?.jobCardId?._id || "",
         qudaystocomplete: quotationData?.daysToQuote || "",
         quCustomerCareRepresentative: quotationData?.CCRId || "",
 
-
+        quoNotes: quotationData?.notes || "",
+        totalSectionParts: (quotationData?.totalPartsCost && quotationData.totalPartsCost !== 0)
+          ? String(quotationData.totalPartsCost)
+          : "",
+        totalLaborParts: (quotationData?.laborCharge && quotationData.laborCharge !== 0)
+          ? String(quotationData.laborCharge)
+          : "",
+        totalGrandParts: String(quotationData?.totalCost) || "",
         itemList: quotationData?.listOfItems?.length > 0 ? quotationData?.listOfItems : [
           { itemName: "", itemPrice: "" },
         ],
@@ -389,8 +508,16 @@ export const useCreateQuotaion = ({ CsrList }) => {
         sectionItems: quotationData?.sectionItemList?.length > 0 ?
           quotationData.sectionItemList :
           [{
-            sectionName: "",
-            itemslist: [{ itemName: "" }], price: ""
+            sectionName: "Change parts",
+            itemsList: [{ itemName: "" }],
+          },
+          {
+            sectionName: "Repair Parts",
+            itemsList: [{ itemName: "" }],
+          },
+          {
+            sectionName: "Labor & Materials",
+            itemsList: [{ itemName: "" }],
           }],
         quStatus: quotationData?.status || "Draft",
         quoLpo: quotationData?.lpo || [],
@@ -398,36 +525,66 @@ export const useCreateQuotaion = ({ CsrList }) => {
     } else if (jobCardId && jobcardData) {
       return {
         quDateAndTime: formatDate(new Date()),
+        isMailSent: true,
+        carPlateNumber: jobcardData?.carId?.plateNumber || "",
         quCustomer: jobcardData.customerId?._id || "",
         quCar: jobcardData.carId?._id || "",
-        quInsuranceCom: jobcardData.insuranceCompany?._id || "",
+        quInsuranceCom: jobcardData?.isFault
+          ? jobcardData?.insuranceCompany?._id || ""
+          : jobcardData?.newInsuranceCompany?._id || "",
         quJobCard: jobcardData?._id || "",
         qudaystocomplete: "",
-        quCustomerCareRepresentative: customerCareRepresentative,
+        carPlateNumber: jobcardData?.carId?.plateNumber || "",
+        quCustomerCareRepresentative: jobcardData?.currentCSRId?.employeeId || customerCareRepresentative,
         itemList: [{ itemName: "", itemPrice: "" }],
+        quoNotes: "",
+        totalSectionParts: "",
+        totalLaborParts: "",
+        totalGrandParts: "",
         sectionItems: [
           {
-            sectionName: "",
+            sectionName: "Change parts",
             itemsList: [{ itemName: "" }],
-            price: "",
+
+          },
+          {
+            sectionName: "Repair Parts",
+            itemsList: [{ itemName: "" }],
+
+          },
+          {
+            sectionName: "Labor & Materials",
+            itemsList: [{ itemName: "" }],
           },
         ],
       };
     } else {
       return {
-        quDateAndTime: "",
+        quDateAndTime: formatDate(new Date()),
         quCustomer: "",
         quCar: "",
         quInsuranceCom: "",
+        isMailSent: true,
         quJobCard: "",
         qudaystocomplete: "",
-        quCustomerCareRepresentative:customerCareRepresentative,
+        carPlateNumber: jobcardData?.carId?.plateNumber || "",
+        quCustomerCareRepresentative: jobcardData?.currentCSRId?.employeeId || customerCareRepresentative,
         itemList: [{ itemName: "", itemPrice: "" }],
+        quoNotes: "",
+        totalSectionParts: "",
+        totalLaborParts: "",
         sectionItems: [
           {
-            sectionName: "",
+            sectionName: "Change parts",
             itemsList: [{ itemName: "" }],
-            price: "",
+          },
+          {
+            sectionName: "Repair Parts",
+            itemsList: [{ itemName: "" }],
+          },
+          {
+            sectionName: "Labor & Materials",
+            itemsList: [{ itemName: "" }],
           },
         ],
       };

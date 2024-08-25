@@ -12,11 +12,14 @@ import Select from "react-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSession } from "next-auth/react";
+import { getUserMeAction } from "@/action/auth-action";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const ClaimView = () => {
   const { data: session } = useSession();
   const [selectJobCard, setselectJobCard] = useState(null);
   const [initialStatus, setInitialStatus] = useState(null);
+  const [noClaimNumber, setNoClaimNumber] = useState(false);
   const params = useParams();
   const router = useRouter();
   const jobCardId = params?.view_jobcard;
@@ -29,6 +32,7 @@ const ClaimView = () => {
     handleSubmit,
     setError,
     formState: { errors },
+    clearErrors
   } = useForm({
     mode: "onChange",
   });
@@ -54,8 +58,8 @@ const ClaimView = () => {
 
   const updateClaimMutation = useMutation({
     mutationKey: ["updateClaimMutation"],
-    mutationFn: async ({ id, status, insuranceClaimNumber }) => {
-        return await updateClaimAction(id, { status, insuranceClaimNumber });
+    mutationFn: async ({ id, status, insuranceClaimNumber, noClaimNumber }) => {
+        return await updateClaimAction(id, { status, insuranceClaimNumber, noClaimNumber });
     },
     onSuccess: (response) => {
       toast.success("Claim status updated successfully");
@@ -73,31 +77,38 @@ const ClaimView = () => {
 
   const currentStatus = watch("status");
   const insuranceClaimNumberWatch = watch("insuranceClaimNumber");
+  console.log("insuranceClaimNumberWatch",insuranceClaimNumberWatch);
+  
   const hasStatusChanged =
     initialStatus !== null && initialStatus !== currentStatus;
 
-  const handleAssign = (data) => {
-    const { status, insuranceClaimNumber } = data;
-    if (
-      currentStatus === "Approved" &&
-      (!insuranceClaimNumberWatch || insuranceClaimNumberWatch.length === 0)
-    ) {
-      setError("insuranceClaimNumber", {
-        type: "manual",
-        message: "Insurance Claim Number required when status is Approved",
-      });
-      return;
-    }
-    const claimId = jobcardData?.claimId?._id;
-    if (claimId) {
-      const updateData = { status };
-      if (insuranceClaimNumber) {
-        updateData.insuranceClaimNumber = insuranceClaimNumber;
+    const handleAssign = (data) => {
+      const { status, insuranceClaimNumber, noClaimNumber } = data;
+      
+      // Check if the status is "Approved" and the claim number is not provided, unless "No Claim Number" is checked
+      if (
+        currentStatus === "Approved" &&
+        !noClaimNumber &&
+        (!insuranceClaimNumberWatch || insuranceClaimNumberWatch.length === 0)
+      ) {
+        setError("insuranceClaimNumber", {
+          type: "manual",
+          message: "Insurance Claim Number required when status is Approved",
+        });
+        return;
       }
-  
-      updateClaimMutation.mutate({ id: claimId, ...updateData });
-    }
-  };
+    
+      const claimId = jobcardData?.claimId?._id;
+      if (claimId) {
+        const updateData = { status, noClaimNumber }; // Include noClaimNumber in the payload
+        if (insuranceClaimNumber && !noClaimNumber) {
+          updateData.insuranceClaimNumber = insuranceClaimNumber;
+        }
+    
+        updateClaimMutation.mutate({ id: claimId, ...updateData });
+      }
+    };
+    
 
   useEffect(() => {
     if (jobcardData) {
@@ -106,6 +117,8 @@ const ClaimView = () => {
         "insuranceClaimNumber",
         jobcardData?.claimId?.insuranceClaimNumber || ""
       );
+      setValue("noClaimNumber", jobcardData?.claimId?.noClaimNumber || false);
+      setNoClaimNumber(jobcardData?.claimId?.noClaimNumber || false);
       setInitialStatus(jobcardData?.claimId?.status);
     }
   }, [jobcardData, setValue]);
@@ -123,7 +136,7 @@ const ClaimView = () => {
     return <p>Error fetching data...</p>;
   }
 
-  if (!jobcardData.claimId) {
+  if (!jobcardData?.claimId) {
     return (
       <div className="w-full flex flex-wrap justify-between gap-4">
         <div className="w-full lg:w-full space-y-4">
@@ -143,12 +156,24 @@ const ClaimView = () => {
       </div>
     );
   }
+  const {
+    data: userData,
+    error: userError,
+    isLoading: userLoading,
+  } = useQuery({
+    queryKey: ["userMe"],
+    queryFn: () => getUserMeAction(session.jwt),
+    enabled: !!session?.jwt, // Only run the query if the token is available
+  });
+
+  const USER_ROLE = userData?.data?.userId?.designation; 
 
   const isStatusEditable = [
     "Under Approval",
     "Re-Submitted",
     "Reject",
-  ].includes(initialStatus);
+    // "Approved"
+  ].includes(initialStatus) && (USER_ROLE === "Surveyor" || userData?.data?.userId?.role == "company");
 
 
 
@@ -168,7 +193,7 @@ const ClaimView = () => {
                   <div className="w-full lg:w-[48%] space-y-4">
                     <div className="">
                       <Label htmlFor="details" className="font-bold">
-                        Claim Number
+                        Internal Claim Number
                       </Label>
                       <div className="flex gap-2 w-full mt-1 ml-1">
                         <label>{jobcardData?.claimId?.claimNumber}</label>
@@ -220,6 +245,79 @@ const ClaimView = () => {
                       {hasStatusChanged &&
                         initialStatus !== "Approved" &&
                         currentStatus === "Approved" && (
+                          <>
+                            <div className="flex gap-2 w-full mt-1 ml-1">
+                              <div className="w-[20rem]">
+                                <Label>Insurance Claim Number</Label>
+                                <Controller
+                                  name="insuranceClaimNumber"
+                                  control={control}
+                                  render={({ field: { value, onChange } }) => (
+                                    <Input
+                                      type="text"
+                                      name="insuranceClaimNumber"
+                                      placeholder="Insurance Claim Number"
+                                      size="lg"
+                                      id="insuranceClaimNumber"
+                                      value={value}
+                                      onChange={onChange}
+                                      disabled={noClaimNumber} // Disable the input if "No Claim Number" is checked
+                                    />
+                                  )}
+                                />
+                                {errors.insuranceClaimNumber &&
+                                  !noClaimNumber && (
+                                    <p className="text-red-500">
+                                      {errors.insuranceClaimNumber.message}
+                                    </p>
+                                  )}
+                              </div>
+                              {noClaimNumber === false  && !hasStatusChanged && insuranceClaimNumber == "" &&(
+                              <div className="w-[20rem]">
+                                {
+                                  <Button
+                                    className="ml-auto"
+                                    type="submit"
+                                    variant="primary"
+                                  >
+                                    Add Claim Number
+                                  </Button>
+                                }
+                              </div>
+                            )}
+                            </div>
+                            <div className="flex gap-2 w-full mt-1 ml-1">
+                              <div className="w-[20rem]">
+                                <Controller
+                                  name="noClaimNumber"
+                                  control={control}
+                                  render={({ field: { value, onChange } }) => (
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id="noClaimNumber"
+                                        checked={value}
+                                        onCheckedChange={(checked) => {
+                                          onChange(checked);
+                                          if (checked) {
+                                            clearErrors("insuranceClaimNumber");
+                                            // Clear error if checkbox is checked
+                                          }
+                                          setNoClaimNumber(checked);
+                                        }}
+                                      />
+                                      <Label htmlFor="noClaimNumber">
+                                        No Claim Number
+                                      </Label>
+                                    </div>
+                                  )}
+                                />
+                              </div>
+                            </div>
+                          </>
+                        )}
+
+                      {initialStatus === "Approved" && (
+                        <>
                           <div className="flex gap-2 w-full mt-1 ml-1">
                             <div className="w-[20rem]">
                               <Label>Insurance Claim Number</Label>
@@ -235,31 +333,60 @@ const ClaimView = () => {
                                     id="insuranceClaimNumber"
                                     value={value}
                                     onChange={onChange}
+                                    disabled={noClaimNumber || jobcardData?.claimId?.insuranceClaimNumber && (USER_ROLE !== "Surveyor" || userData?.data?.userId?.role !== "company")} // Disable the input if "No Claim Number" is checked
                                   />
                                 )}
                               />
-                              {errors.insuranceClaimNumber && (
-                                <p className="text-red-500">
-                                  {errors.insuranceClaimNumber.message}
-                                </p>
-                              )}
+                              {errors.insuranceClaimNumber &&
+                                !noClaimNumber && (
+                                  <p className="text-red-500">
+                                    {errors.insuranceClaimNumber.message}
+                                  </p>
+                                )}
                             </div>
                           </div>
-                        )}
-                      {initialStatus === "Approved" && (
-                        <div className="flex gap-2 w-full mt-1 ml-1">
-                          <div className="w-[20rem]">
-                            <Label htmlFor="details" className="font-bold">
-                              Insurance Claim Number
-                            </Label>
-                            <div className="flex gap-2 w-full mt-1 ml-1">
-                              <label>
-                                {jobcardData?.claimId?.insuranceClaimNumber ||
-                                  ""}
-                              </label>
+                          <div className="flex gap-2 w-full mt-3 ml-1">
+                            <div className="w-[20rem]">
+                              <Controller
+                                name="noClaimNumber"
+                                control={control}
+                                render={({ field: { value, onChange } }) => (
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id="noClaimNumber"
+                                      checked={value} 
+                                      disabled={jobcardData?.claimId?.insuranceClaimNumber && (USER_ROLE !== "Surveyor" || userData?.data?.userId?.role !== "company")}
+                                      onCheckedChange={(checked) => {
+                                        onChange(checked);
+                                        if (checked) {
+                                          clearErrors("insuranceClaimNumber");
+                                          // Clear error if checkbox is checked
+                                        }
+                                        setNoClaimNumber(checked);
+                                      }}
+                                    />
+                                    <Label htmlFor="noClaimNumber">
+                                      No Claim Number
+                                    </Label>
+                                  </div>
+                                )}
+                              />
                             </div>
                           </div>
-                        </div>
+                             {noClaimNumber === false  && !hasStatusChanged && !jobcardData?.claimId?.insuranceClaimNumber && (USER_ROLE === "Surveyor" || userData?.data?.userId?.role === "company")  &&(
+                              <div className="w-[20rem] mt-3">
+                                {
+                                  <Button
+                                    className="ml-auto"
+                                    type="submit"
+                                    variant="primary"
+                                  >
+                                    Add Claim Number
+                                  </Button>
+                                }
+                              </div>
+                            )}
+                        </>
                       )}
                     </div>
                   </div>

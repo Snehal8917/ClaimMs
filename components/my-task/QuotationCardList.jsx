@@ -234,21 +234,30 @@ const QuotationsListMyTask = () => {
         {
             accessorKey: "isEmailSeen",
             header: () => <div className="text-center">Email Status</div>,
-            cell: ({ row }) => (
+            cell: ({ row }) => {
+              const { isEmailSent, isEmailSeen } = row.original;
+          
+              let statusText = "Not Sent";
+              let badgeColor = "neutral"; // Assuming "neutral" is an available color variant
+          
+              if (isEmailSent) {
+                statusText = isEmailSeen ? "Seen" : "Not Seen";
+                badgeColor = isEmailSeen ? "success" : "destructive";
+              }
+          
+              return (
                 <div className="text-center">
-                    <Badge
-                        variant="soft"
-                        color={row?.original?.isEmailSeen ? "success" : "destructive"}
-                        className="capitalize"
-                    >
-                        {row?.original?.isEmailSeen ? "Seen" : "Not Seen"}
-                    </Badge>
+                  <Badge variant="soft" color={badgeColor} className="capitalize">
+                    {statusText}
+                  </Badge>
                 </div>
-            ),
-            filterFn: (row, id, value) => {
-                return value?.includes(row.getValue(id));
+              );
             },
-        },
+            filterFn: (row, id, value) => {
+              return value?.includes(row.getValue(id));
+            },
+          },
+          
         {
             header: "‎",
             id: "actions",

@@ -59,14 +59,10 @@ const SectionAddItem = ({
     name: `sectionItems[${index}].itemsList`
   });
 
-  const price = useWatch({
-    control,
-    name: `sectionItems[${index}].price`
-  });
+
 
   const allFieldsFilled =
     sectionName?.trim() !== "" &&
-    price?.trim() !== "" &&
     itemsList.every(item => item.itemName.trim() !== "");
 
   useEffect(() => {
@@ -151,7 +147,7 @@ const SectionAddItem = ({
                             // variant="outline"
                             type="button"
                             title="Add Item"
-                            disabled={!allFieldsFilled}
+                            // disabled={!allFieldsFilled}
                             onClick={() => handleAddSection()}
 
                           >
@@ -228,7 +224,7 @@ const SectionAddItem = ({
                             <></>
                           ) : (
                             <>
-                              {" "}
+
                               {itemIndex === fields.length - 1 ? (
                                 <>
                                   <div className="flex justify-center items-center gap-2">
@@ -237,7 +233,7 @@ const SectionAddItem = ({
                                         className="shadow-md"
                                         size="icon"
                                         variant="outline"
-                                        color="destructive" 
+                                        color="destructive"
                                         type="button"
                                         title="Remove"
                                         onClick={() =>
@@ -247,15 +243,15 @@ const SectionAddItem = ({
                                         <Icon
                                           icon="heroicons:trash"
                                           className="w-5 h-5 "
-                                         
+
                                         />
                                       </Button>
                                     )}
                                     <Button
-                                       className="shadow-md"
+                                      className="shadow-md"
                                       size="icon"
                                       variant="outline"
-                                      color="default" 
+                                      color="default"
                                       type="button"
                                       title="Add Item"
                                       onClick={() => handleAddItem()}
@@ -266,11 +262,11 @@ const SectionAddItem = ({
                                 </>
                               ) : (
                                 <Button
-                                  
+
                                   className="shadow-md"
                                   size="icon"
                                   variant="outline"
-                                  color="destructive" 
+                                  color="destructive"
                                   type="button"
                                   title="Remove"
                                   onClick={() => handleRemoveItem(itemIndex)}
@@ -287,10 +283,9 @@ const SectionAddItem = ({
                       </div>
                     ))}
                   </div>
-                  <div className="flex">
+                  {/* <div className="flex">
                     <div className="flex flex-col gap-2 w-full">
                       <div>
-
                         <Controller
                           control={control}
                           name={`sectionItems[${index}].price`}
@@ -319,7 +314,7 @@ const SectionAddItem = ({
                         )}
                       </div>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </CardContent>

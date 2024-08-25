@@ -57,14 +57,9 @@ const SectionAddItemAd = ({
         name: `sectionItems[${index}].itemsList`
     });
 
-    const price = useWatch({
-        control,
-        name: `sectionItems[${index}].price`
-    });
-
+ 
     const allFieldsFilled =
         sectionName?.trim() !== "" &&
-        price?.trim() !== "" &&
         itemsList.every(item => item.itemName.trim() !== "");
 
     useEffect(() => {
@@ -138,7 +133,7 @@ const SectionAddItemAd = ({
                                                 // variant="outline"
                                                 type="button"
                                                 title="Add Item"
-                                                disabled={!allFieldsFilled}
+                                                //disabled={!allFieldsFilled}
                                                 onClick={() => handleAddSection()}
 
                                             >
@@ -256,7 +251,7 @@ const SectionAddItemAd = ({
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="flex">
+                                    {/* <div className="flex">
                                         <div className="flex flex-col gap-2 w-full">
                                             <div>
 
@@ -284,7 +279,7 @@ const SectionAddItemAd = ({
                                                 )}
                                             </div>
                                         </div>
-                                    </div>
+                                    </div> */}
                                 </div>
                             </div>
                         </CardContent>

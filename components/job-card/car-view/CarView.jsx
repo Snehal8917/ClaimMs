@@ -81,6 +81,25 @@ const CarView = ({ jobcardData }) => {
                       {jobcardData?.insuranceDetails?.currentInsurance}
                     </label>
                   </div>
+                  <div>
+                    {jobcardData?.isFault == false ? (
+                      <>
+                        <div>
+                          <Label htmlFor="tcNo" className="font-bold">
+                            New Insurance Company
+                          </Label>
+                          <div className="flex gap-2 w-full">
+                            <label className="mt-1 ml-1">
+                              {jobcardData?.newInsuranceCompany?.companyName}
+                            </label>
+                          </div>
+                        </div>
+                        <label className="mt-1 ml-1"></label>
+                      </>
+                    ) : (
+                      <></>
+                    )}
+                  </div>
                 </div>
 
                 <div className="w-full md:w-[48%] lg:w-[48%] space-y-4">

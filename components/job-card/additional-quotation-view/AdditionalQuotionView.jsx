@@ -3,9 +3,7 @@ import { Fragment, useEffect, useState } from "react";
 
 import { getUserMeAction } from "@/action/auth-action";
 import {
-  deleteQuotation,
   getAllAdQuotation,
-  updateQuotation
 } from "@/action/quotationAction/quotation-action";
 import BasicDataTable from "@/components/common/data-table/basic-table";
 import DialogPlacement from "@/components/common/dialog/dialog-placement";
@@ -19,6 +17,11 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import {
+  deleteQuotation,
+  getAllQuotation,
+  updateQuotation,
+} from "@/action/quotationAction/quotation-action";
 
 const AdditionalQuotionView = ({ jobcardData }) => {
   const params = useParams();
@@ -53,6 +56,29 @@ const AdditionalQuotionView = ({ jobcardData }) => {
       });
     },
   });
+
+
+
+  const { data: maniQuData, error: errMainQu, refetch: reMainQu } = useQuery({
+    queryKey: ["GetQuotationER", pageIndex, pageSize, searchString],
+    queryFn: () => {
+      setTableLoading(true);
+      return getAllQuotation({
+        page: pageIndex + 1,
+        size: pageSize,
+        all: false,
+        search: searchString,
+        jobCardId: jobCardIEd,
+      }).finally(() => {
+        setTableLoading(false);
+        setComponentLoading(false);
+      });
+    },
+  });
+
+  const quotationsMain = maniQuData?.data?.allQuotations || [];
+
+
 
   const {
     data: userData,
@@ -272,6 +298,10 @@ const AdditionalQuotionView = ({ jobcardData }) => {
   const canCreateQutation =
     role === "company" || (isEmployee && designation === "Surveyor");
 
+
+
+
+
   return (
     <Fragment>
       <div className="mt-4 space-y-5">
@@ -279,7 +309,7 @@ const AdditionalQuotionView = ({ jobcardData }) => {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Additional Quotations List</CardTitle>
-              {enable_Quotation && canCreateQutation && (
+              {quotationsMain.length > 0 && enable_Quotation && canCreateQutation && (
                 <Button asChild>
                   <Link href={`/additional-quotation/create/${jobCardIEd}`}>
                     <Plus className="w-5 h-5 ltr:mr-2 rtl:ml-2" />

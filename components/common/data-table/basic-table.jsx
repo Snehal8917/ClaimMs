@@ -48,6 +48,8 @@ export function BasicDataTable({
   handleStatusChange,
   handleStartDateChange,
   handleEndDateChange,
+  handleExpectedStartDateChange,
+  handleExpectedEndDateChange,
   handleReset,
   refetch,
   hiddenFilter = false,
@@ -64,6 +66,7 @@ export function BasicDataTable({
   const [columnVisibility, setColumnVisibility] = React.useState({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [dateRange, setDateRange] = React.useState({ from: "", to: "" });
+  const [expectedDateRange, setExpectedDateRange] = React.useState({ from: "", to: "" });
   const [selectedRowId, setSelectedRowId] = React.useState(null);
 
   const handleDateRangeChange = ({ from = null, to = null } = {}) => {
@@ -80,6 +83,25 @@ export function BasicDataTable({
       setDateRange({ from, to });
       handleStartDateChange(from);
       handleEndDateChange(to);
+      requestAnimationFrame(() => {
+        refetch();
+      });
+    }
+  };
+  const handleExpectedDateRangeChange = ({ from = null, to = null } = {}) => {
+    if (from === null && to === null) {
+      // Fetch all data
+      setExpectedDateRange({ from, to });
+      handleExpectedStartDateChange(null);
+      handleExpectedEndDateChange(null);
+      requestAnimationFrame(() => {
+        refetch();
+      });
+    } else {
+      // Fetch data within the selected date range
+      setExpectedDateRange({ from, to });
+      handleExpectedStartDateChange(from);
+      handleExpectedEndDateChange(to);
       requestAnimationFrame(() => {
         refetch();
       });
@@ -120,18 +142,24 @@ export function BasicDataTable({
 
   const resetFilters = () => {
     handleDateRangeChange({ from: null, to: null });
+    handleExpectedDateRangeChange({ from: null, to: null });
     table.resetColumnFilters();
   };
 
-  const handleRowClick = (e,row) => {
-    e.stopPropagation();
-    setSelectedRowId(row.id);
-    if (rowClickable && !jobCardId) {
-      handleViewClick(row.original._id);
-    } else if (rowClickable && jobCardId) {
-      handleViewClick(e,row.original.jobCardId);
+  const handleRowClick = (e, row) => {
+    e.stopPropagation(); 
+    setSelectedRowId(row.id); 
+    const task = row?.original?.tab; 
+
+    if (rowClickable) {
+        if (!jobCardId) {
+            handleViewClick(row.original._id, task); 
+        } else {
+            handleViewClick(e, row.original.jobCardId, task);
+        }
     }
-  };
+};
+
 
   const handleCheckboxChange = (row) => {
     setSelectedRows((prev) =>
@@ -163,12 +191,18 @@ export function BasicDataTable({
             <>
               <DataTableToolbar table={table} />
               <DatePickerWithRange
+               message={"Expected Completion"}
+                onSelectDateRange={handleExpectedDateRangeChange}
+                selectedDateRange={expectedDateRange}
+              />
+              <DatePickerWithRange
+              message={"Pick a date range"}
                 onSelectDateRange={handleDateRangeChange}
                 selectedDateRange={dateRange}
               />
             </>
           )}
-          {(isFiltered || dateRange?.from || dateRange?.to) && (
+          {(isFiltered || dateRange?.from || dateRange?.to || expectedDateRange?.from || expectedDateRange?.to) && (
             <Button
               variant="outline"
               onClick={resetFilters}
