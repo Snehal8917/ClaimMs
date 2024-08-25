@@ -11,6 +11,9 @@ export const additionalQuotationSchema = z.object({
   quCustomer: z.string().refine((value) => value.trim() !== "", {
     message: "customer is required",
   }),
+  carPlateNumber: z.string().refine((value) => value.trim() !== "", {
+    message: "plate number is required",
+  }),
   quCar: z.string().refine((value) => value.trim() !== "", {
     message: "car is required",
   }),
@@ -42,6 +45,7 @@ export const additionalQuotationSchema = z.object({
     })
   ),
   quStatus: z.string().optional(),
+  quoNotes: z.string().optional(),
 });
 
 
@@ -56,7 +60,9 @@ export const additionalQuotationFormSchemaSection = z.object({
     quCustomer: z.string().refine((value) => value.trim() !== "", {
       message: "Customer is required",
     }),
-  
+    carPlateNumber: z.string().refine((value) => value.trim() !== "", {
+      message: "plate number is required",
+    }),
     quCar: z.string().refine((value) => value.trim() !== "", {
       message: "Car is required",
     }),
@@ -80,15 +86,38 @@ export const additionalQuotationFormSchemaSection = z.object({
             })
           })
         ),
-        price: z.string().refine((value) => value.trim() !== "", {
-          message: "price is required",
-        }),
       })
+    ),
+    totalLaborParts: z.string().optional(),
+
+    totalSectionParts: z.string().optional(),
+    totalGrandParts: z.string().refine((value) => value.trim() !== "", {
+      message: "Grand-Total is required",
+    }).refine(
+      (value) => {
+        return /^\d+(\.\d{1,2})?$/.test(value);
+      },
+      {
+        message: "valid number!",
+      }
     ),
   
     quStatus: z.string().optional(),
-  
+    quoNotes: z.string().optional(),
    
   
+  }).superRefine((data, ctx) => {
+    if (data.totalLaborParts && !/^\d+(\.\d{1,2})?$/.test(data.totalLaborParts)) {
+      ctx.addIssue({
+        path: ["totalLaborParts"],
+        message: "Must be a valid number!",
+      });
+    }
+    if (data.totalSectionParts && !/^\d+(\.\d{1,2})?$/.test(data.totalSectionParts)) {
+      ctx.addIssue({
+        path: ["totalSectionParts"],
+        message: "Must be a valid number!",
+      });
+    }
   });
   

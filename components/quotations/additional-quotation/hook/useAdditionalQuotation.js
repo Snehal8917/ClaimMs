@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { useParams, useRouter } from "next/navigation";
 
 import { getSingleJobCardAction } from "../../../../action/employeeAction/jobcard-action";
-import { addAdQuotation, getAdSingleQuotation,updateAdQuotation } from "@/action/quotationAction/quotation-action";
+import { addAdQuotation, getAdSingleQuotation, updateAdQuotation } from "@/action/quotationAction/quotation-action";
 
 export const useAdditionalQuotation = () => {
     const router = useRouter();
@@ -109,6 +109,11 @@ export const useAdditionalQuotation = () => {
             itemList,
             quStatus,
             sectionItems,
+            totalLaborParts,
+            totalSectionParts,
+            quoNotes,
+            totalGrandParts,
+            carPlateNumber
         } = values;
 
 
@@ -124,6 +129,11 @@ export const useAdditionalQuotation = () => {
             jobCardId: quJobCard,
             status: snewtatus || quStatus,
             sectionItemList: sectionItems,
+            totalPartsCost: totalSectionParts,
+            laborCharge: totalLaborParts,
+            notes: quoNotes,
+            plateNumber: carPlateNumber,
+            totalCost: totalGrandParts
         };
 
 
@@ -138,14 +148,13 @@ export const useAdditionalQuotation = () => {
 
 
 
-    console.log("quotationData?.status ", quotationData?.status);
     const initialValues = useMemo(() => {
         if (viewAdQuId && quotationData) {
             return {
                 quDateAndTime: formatDate(quotationData?.date) || "",
                 quCustomer: quotationData?.customer?._id || "",
                 quCar: quotationData?.car?._id || "",
-
+                carPlateNumber: quotationData?.car?.plateNumber || "",
                 quJobCard: quotationData?.jobCardId?._id || "",
                 qudaystocomplete: quotationData?.daysToQuote || "",
 
@@ -156,6 +165,14 @@ export const useAdditionalQuotation = () => {
                     ? quotationData.sectionItemList
                     : [{ sectionName: "", itemsList: [{ itemName: "" }], price: "" }],
                 quStatus: quotationData?.status || "Draft",
+                quoNotes: quotationData?.notes || "",
+                totalSectionParts: (quotationData?.totalPartsCost && quotationData.totalPartsCost !== 0)
+                    ? String(quotationData.totalPartsCost)
+                    : "",
+                totalLaborParts: (quotationData?.laborCharge && quotationData.laborCharge !== 0)
+                    ? String(quotationData.laborCharge)
+                    : "",
+                totalGrandParts: String(quotationData?.totalCost) || "",
 
             };
         } else if (quotaionsId && quotationData?.status === 'Draft') {
@@ -163,11 +180,18 @@ export const useAdditionalQuotation = () => {
                 quDateAndTime: formatDate(quotationData?.date) || "",
                 quCustomer: quotationData?.customer?._id || "",
                 quCar: quotationData?.car?._id || "",
-
+                carPlateNumber: quotationData?.car?.plateNumber || "",
                 quJobCard: quotationData?.jobCardId?._id || "",
                 qudaystocomplete: quotationData?.daysToQuote || "",
 
-
+                quoNotes: quotationData?.notes || "",
+                totalSectionParts: (quotationData?.totalPartsCost && quotationData.totalPartsCost !== 0)
+                    ? String(quotationData.totalPartsCost)
+                    : "",
+                totalLaborParts: (quotationData?.laborCharge && quotationData.laborCharge !== 0)
+                    ? String(quotationData.laborCharge)
+                    : "",
+                totalGrandParts: String(quotationData?.totalCost) || "",
                 itemList: quotationData?.listOfItems?.length > 0 ? quotationData?.listOfItems : [
                     { itemName: "", itemPrice: "" },
                 ],
@@ -184,17 +208,33 @@ export const useAdditionalQuotation = () => {
             return {
                 quDateAndTime: formatDate(new Date()),
                 quCustomer: jobcardData?.customerId?._id || "",
+                carPlateNumber: jobcardData?.carId?.plateNumber || "",
                 quCar: jobcardData?.carId?._id || "",
                 quJobCard: jobcardData?._id || "",
                 qudaystocomplete: "",
                 itemList: [{ itemName: "", itemPrice: "" }],
-                sectionItems: [{ sectionName: "", itemsList: [{ itemName: "" }], price: "" }],
+                quoNotes: "",
+                totalSectionParts: "",
+                totalLaborParts: "",
+                totalGrandParts: "",
+                // sectionItems: [{ sectionName: "", itemsList: [{ itemName: "" }], price: "" }],
+                sectionItems: [
+                    {
+                        sectionName: "Change parts",
+                        itemsList: [{ itemName: "" }],
+                    },
+                    {
+                        sectionName: "Repair Parts",
+                        itemsList: [{ itemName: "" }],
+                    },
+                    {
+                        sectionName: "Labor & Materials",
+                        itemsList: [{ itemName: "" }],
+                    },
+                ],
             };
         }
     }, [viewAdQuId, quotationData, jobcardData]);
-
-
-
     return {
         initialValues: initialValues,
         schema: additionalQuotationSchema,

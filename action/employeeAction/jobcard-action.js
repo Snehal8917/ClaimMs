@@ -1,11 +1,14 @@
 import {
   CreateJobCard,
   DeleteJobCard,
+  getCommentList,
   getHistoryList,
   getJobCardById,
   getJobCardsList,
   getJobCardsMyTaskList,
-  updateJobCardById
+  updateJobCardById,
+  AddComment,
+  getInsuranceValid
 } from "../../config/companyConfig/jobcard.config";
 
 
@@ -14,8 +17,8 @@ export const addJobCard = async (data) => {
   return response;
 };
 
-export const getJobCardListAction = async ({ page = 1, size = 10, all = false, search = "", status = "", startDate = "", endDate = "" }) => {
-  const response = await getJobCardsList({ page, size, all, search, status, startDate, endDate });
+export const getJobCardListAction = async ({ page = 1, size = 10, all = false, search = "", status = "", startDate = "", endDate = "", completeStartDate = "", completeEndDate = "" }) => {
+  const response = await getJobCardsList({ page, size, all, search, status, startDate, endDate, completeStartDate, completeEndDate });
   return response;
 };
 
@@ -60,5 +63,22 @@ export const getHistoryAction = async ({ jobCardId = "" }) => {
 //my task jobcard new
 export const getJobCardMyTaskListAction = async ({ page = 1, size = 10, all = false, search = "", status = "", startDate = "", endDate = "" }) => {
   const response = await getJobCardsMyTaskList({ page, size, all, search, status, startDate, endDate });
+  return response;
+};
+
+///get cooment
+export const getCommentAction = async ({ jobCardId = "" }) => {
+  const response = await getCommentList({ jobCardId });
+  return response;
+}
+//add coomet
+export const AddCommentAction = async (data) => {
+  const response = await AddComment(data);
+  return response;
+};
+
+//check validation insurance survarye
+export const getInsuranceValidAction = async (id) => {
+  const response = await getInsuranceValid(id);
   return response;
 };

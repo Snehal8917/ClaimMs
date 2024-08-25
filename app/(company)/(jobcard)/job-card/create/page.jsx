@@ -4,6 +4,7 @@ import {
   addJobCard,
   getSingleJobCardAction,
   updateJobCardAction,
+  getInsuranceValidAction
 } from "@/action/employeeAction/jobcard-action";
 import { extractCarAction } from "@/action/extractDataAction/carRcAction";
 import { addLicenceData } from "@/action/licenceAction/licence-action";
@@ -60,6 +61,7 @@ const carDetailsSchema = z.object({
     .min(4, { message: "Car Year is required" })
     .regex(/^\d{4}$/, { message: "Invalid Year format" }),
   plateNumber: z.string().min(1, { message: "Plate Number is required" }),
+  nameOnRegistrationCard: z.string().optional(),
   chassisNo: z.string().min(1, { message: "Chassis Number is required" }),
 });
 
@@ -103,6 +105,9 @@ const step1Schema = z
       }, "Invalid mobile number format"),
     fullName: z.string().refine((value) => value.trim() !== "", {
       message: "Customer Name required",
+    }),
+    nameOnDrivingLicense: z.string().refine((value) => value.trim() !== "", {
+      message: "License Name required",
     }),
 
     emiratesId: z.array(z.any()).min(1, { message: "Emirates ID required" }),
@@ -157,17 +162,32 @@ const step2Schema = z.object({
 const step3Schema = z.object({
   details: z.any().optional(),
   startDate: z.any().optional(),
-  // status: z.any().optional(),
 });
 
 // Step 4 schema
-const step4Schema = z.object({
-  dateOfAccident: z.any().optional(),
-  isFault: z.boolean().optional(),
-  documents: documentSchema,
-  alreadyHasClaimNumber: z.boolean().optional(),
-  insuranceClaimNumber: z.string().optional(),
-});
+const step4Schema = z
+  .object({
+    dateOfAccident: z.any().optional(),
+    isFault: z.boolean().optional(),
+    documents: documentSchema,
+    alreadyHasClaimNumber: z.boolean().optional(),
+    insuranceClaimNumber: z.string().optional(),
+
+    newInsuranceCompany: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      // If isFault is false, newInsuranceCompany should be required
+      if (data.isFault === false) {
+        return !!data.newInsuranceCompany; // Return true if newInsuranceCompany is not empty
+      }
+      return true; // Otherwise, return true
+    },
+    {
+      message: "New Insurer is required",
+      path: ["newInsuranceCompany"], // Path to the field that needs validation
+    }
+  );
 
 const repairOptions = [
   { value: "Breakdown", label: "Breakdown" },
@@ -204,6 +224,7 @@ const JobCardPage = () => {
   const [drivingApi, setDrivingApi] = useState(false);
 
   const [currentInsId, setCurrentInsId] = useState("");
+  const [newInsId, setNewInsId] = useState("");
   const [apiCalled, setApiCalled] = useState(false);
   const [exctractCarData, setExctractCarData] = useState("");
   const [binaryFiles, setBinaryFiles] = useState([]);
@@ -325,16 +346,21 @@ const JobCardPage = () => {
   //   queryFn: () => getAllEmployee({ all: true }),
   // });
 
-  const InsuranseCompanyList = InsuranceCompaniesData?.data?.garageInsurance?.map(
-    (insuranse_compnay) => ({
+  const InsuranseCompanyList =
+    InsuranceCompaniesData?.data?.garageInsurance?.map((insuranse_compnay) => ({
       value: insuranse_compnay.companyName,
       label: insuranse_compnay.companyName,
       id: insuranse_compnay._id,
-    })
-  );
+    }));
+  const InsuranseCompanyList2 =
+    InsuranceCompaniesData?.data?.garageInsurance?.map((insuranse_compnay) => ({
+      value: insuranse_compnay._id,
+      label: insuranse_compnay.companyName,
+      id: insuranse_compnay._id,
+    }));
 
   // console.log("InsuranceCompaniesData ay",InsuranceCompaniesData)
-  console.log("InsuranseCompanyList ay",InsuranseCompanyList)
+  console.log("InsuranseCompanyList ay", InsuranseCompanyList);
   // const customersLists = customersData?.data?.customers?.map((customer) => ({
   //   value: customer._id,
   //   label: customer.firstName,
@@ -362,12 +388,12 @@ const JobCardPage = () => {
       activeStep === 0
         ? step1Schema
         : activeStep === 1
-        ? step2Schema
-        : activeStep === 2
-        ? step3Schema
-        : activeStep === 3
-        ? step4Schema
-        : schema // default schema if none of the above conditions match
+          ? step2Schema
+          : activeStep === 2
+            ? step3Schema
+            : activeStep === 3
+              ? step4Schema
+              : schema // default schema if none of the above conditions match
     ),
     mode: "all",
   });
@@ -450,29 +476,35 @@ const JobCardPage = () => {
         "registrationCard",
         exctractCarData?.fileUrl?.path ? exctractCarData?.fileUrl?.path : ""
       );
-      formData.append("insuranceCompanyId", currentInsId ? currentInsId : "");
+      //formData.append("insuranceCompanyId", currentInsId ? currentInsId : "");
 
       for (const key in data) {
+        if (data[key] === undefined) {
+          continue;
+        }
         if (key === "carDetails" || key === "insuranceDetails") {
+
+          if (key === "insuranceDetails") {
+            formData.append("insuranceCompanyId", currentInsId ? currentInsId : "");
+          }
           formData.append(key, JSON.stringify(data[key]));
         } else if (key === "documents" && activeStep === 3) {
           // Handle documents as binary files
-          if (key === "documents") {
-            if (aftrePhotosLists && aftrePhotosLists?.length > 0) {
-              Array.from(aftrePhotosLists).forEach((photo) => {
-                formData.append("policeReport", photo);
-              });
-            }
-            if (beforePhotosList && beforePhotosList?.length > 0) {
-              Array.from(beforePhotosList).forEach((photo) => {
-                formData.append("beforePhotos", photo);
-              });
-            }
+          if (aftrePhotosLists && aftrePhotosLists?.length > 0) {
+            Array.from(aftrePhotosLists).forEach((photo) => {
+              formData.append("policeReport", photo);
+            });
+          }
+          if (beforePhotosList && beforePhotosList?.length > 0) {
+            Array.from(beforePhotosList).forEach((photo) => {
+              formData.append("beforePhotos", photo);
+            });
           }
         } else if (key !== "redirect") {
           formData.append(key, data[key]);
         }
       }
+
       // Set the statusToSend based on the provided status
       if (activeStep === 3) {
         const statusToSend =
@@ -640,6 +672,9 @@ const JobCardPage = () => {
     }
   };
 
+
+
+
   const handleModalSubmit = () => {
     if (insuranceClaimNumber) {
       setModalOpen(false);
@@ -661,8 +696,9 @@ const JobCardPage = () => {
   const stepDescriptions = [
     "Customer Details",
     "Car & Insuranse Details",
-    "JobCard Data",
-    "Documents Upload",
+    "Start Date & Comments",
+    // "Documents Upload",
+    "Police Report & Photos",
   ];
   // Emirates Id Extraction
   const extractEmiratesMutation = useMutation({
@@ -742,6 +778,8 @@ const JobCardPage = () => {
       // setValue("carDetails.plateCode", exctractCarData?.data?.plateCode);
       setValue("carDetails.chassisNo", exctractCarData?.data?.chesisNo);
       setValue("carDetails.plateNumber", exctractCarData?.data?.plateNumber);
+      //
+      setValue("carDetails.nameOnRegistrationCard", exctractCarData?.data?.owner);
       // setValue("insuranseCompanyId", { value: exctractCarData.currentInsurer, label: exctractCarData.currentInsurer }); // Assuming you're using react-select and "currentInsurer" corresponds to the value and label of the option
       setValue(
         "insuranceDetails.currentInsurance",
@@ -801,6 +839,8 @@ const JobCardPage = () => {
       }
 
       setValue("fullName", fullName);
+      // nameOnDrivingLicense
+      setValue("nameOnDrivingLicense", fullName);
       setValue("licenceIssueDate", licenceIssueDate);
       setValue("licenceNo", drivingData?.data?.licenceNo);
       setValue("licenceExpiryDate", licenceExpiryDate);
@@ -821,8 +861,9 @@ const JobCardPage = () => {
         isFault,
         alreadyHasClaimNumber,
         insuranceCompany,
+
       } = jobcardData;
-    
+
       const formatDate = (dateString) =>
         dateString ? new Date(dateString).toISOString().split("T")[0] : "";
       const licenceIssueDate = formatDate(
@@ -845,7 +886,8 @@ const JobCardPage = () => {
       setValue("tcNo", customerId?.documentsDetails?.tcNo);
       setValue("licenceIssueDate", licenceIssueDate);
       setValue("licenceExpiryDate", licenceExpiryDate);
-
+      // nameOnDrivingLicense
+      setValue("nameOnDrivingLicense", customerId?.nameOnDrivingLicense);
       if (carId) {
         const { registrationCard } = carId?.documents;
         setValue("carDetails.make", carId?.make);
@@ -858,6 +900,7 @@ const JobCardPage = () => {
 
         setValue("carDetails.year", carId?.year);
         setValue("carDetails.plateNumber", carId?.plateNumber);
+        setValue("carDetails.nameOnRegistrationCard", carId?.nameOnRegistrationCard);
         // setValue("carDetails.plateCode", carId?.plateCode);
         setValue("carDetails.chassisNo", carId?.chassisNo);
         setValue(
@@ -902,8 +945,84 @@ const JobCardPage = () => {
     setFiles(uploadedFiles);
   };
   const handleBeforePhotoFileUpload = (uploadedFiles) => {
-    setBeforePhotosFiles(uploadedFiles);
+    // setBeforePhotosFiles(uploadedFiles);
+    setBeforePhotosFiles((prevFiles) => [...prevFiles, ...uploadedFiles]);
   };
+
+  useEffect(() => {
+    if (jobcardData) {
+      if (jobcardData?.newInsuranceCompany) {
+        console.log(
+          jobcardData?.newInsuranceCompany?._id,
+          "newInsuranceCompany"
+        );
+
+        const selectedCompany = InsuranseCompanyList2?.find(
+          (option) => option.id === jobcardData?.newInsuranceCompany?._id
+        );
+        if (selectedCompany) {
+          setValue("newInsuranceCompany", selectedCompany.id);
+        }
+        console.log(InsuranseCompanyList2, "selectedCompany");
+      } else if (jobcardData.insuranceDetails?.currentInsurance) {
+        const selectedCompany = InsuranseCompanyList2?.find(
+          (option) => option.id === jobcardData?.insuranceCompany?._id
+        );
+        if (selectedCompany) {
+          setValue("newInsuranceCompany", selectedCompany.id);
+        }
+      }
+    }
+  }, [jobcardData, setValue]);
+
+  // const [insuranceIDCheck, setInsuranceIDCheck] = useState(null);
+
+  // const {
+  //   isLoading: isInsuranceCheckLoading,
+  //   isError: isErrorInsurance,
+  //   data: checkInsuranceData,
+  //   error: checkInsuranceDataError,
+  //   refetch: refetchInsuranceCheck,
+  // } = useQuery({
+  //   queryKey: ["checkInsuranceData", insuranceIDCheck],
+  //   queryFn: async () => {
+  //     return await getInsuranceValidAction(insuranceIDCheck); 
+  //   },
+  //     enabled: false, 
+  //     retry: false,
+  //     onSuccess: (response) => {
+  //           //toast.success(response?.message);
+  //           console.log("hey i am insuranceID", response);
+  //     },
+  //         onError: (error) => {
+  //             console.log("hey i am error", error);
+  //             toast.error(error?.data?.message);
+  //         },
+  // })
+
+  const mutationCheckInsurance = useMutation({
+    mutationFn: async (insuranceID) => {
+      return await getInsuranceValidAction(insuranceID);
+    },
+    onSuccess: (response) => {
+      // toast.success(response?.message);
+      // console.log("hey I am insuranceID", response);
+    },
+    onError: (error) => {
+      //   console.log("hey I am error", error);
+      toast.error(error?.data?.message);
+    },
+    retry: false,
+  });
+
+  const CREATED_USER_DESIGNATION = userData?.data?.userId?.designation;
+  const handleInsuranceCheck = async (insuranceID) => {
+
+    if (insuranceID && CREATED_USER_DESIGNATION === "Surveyor") {
+
+      await mutationCheckInsurance.mutateAsync(insuranceID);
+    }
+  }
 
   return (
     <>
@@ -919,7 +1038,7 @@ const JobCardPage = () => {
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: "rgba(0,0,0,0.2)",
+              backgroundColor: "rgba(0,0,0,0.4)",
               zIndex: 51,
             }}
           >
@@ -985,6 +1104,7 @@ const JobCardPage = () => {
                                           errors={errors}
                                           width={150}
                                           height={150}
+                                          loadingError={loadingoverlay}
                                         />
                                       )}
                                     />
@@ -1017,6 +1137,7 @@ const JobCardPage = () => {
                                           errors={errors}
                                           width={150}
                                           height={150}
+                                          loadingError={loadingDriving}
                                         />
                                       )}
                                     />
@@ -1138,7 +1259,34 @@ const JobCardPage = () => {
                                   </div>
                                 </div>
 
+
                                 <div className="w-full lg:w-[48%] space-y-4">
+                                  <div>
+                                    <Label htmlFor="nameOnDrivingLicense">
+                                      Driving License Name
+                                    </Label>
+                                    <div className="flex flex-col  gap-2 w-full">
+                                      <Controller
+                                        control={control}
+                                        name="nameOnDrivingLicense"
+                                        defaultValue=""
+                                        render={({ field }) => (
+                                          <Input
+                                            type="text"
+                                            placeholder="License Name"
+                                            size="lg"
+                                            id="nameOnDrivingLicense"
+                                            {...field}
+                                          />
+                                        )}
+                                      />
+                                      {errors.nameOnDrivingLicense && (
+                                        <span className="text-red-700">
+                                          {errors.nameOnDrivingLicense.message}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
                                   <div>
                                     <Label htmlFor="licenceNo">
                                       Driving License Number
@@ -1286,6 +1434,7 @@ const JobCardPage = () => {
                                           errors={errors}
                                           width={150}
                                           height={150}
+                                          loadingError={loadingCarExtract}
                                         />
 
                                         // <FileUploaderMultiple
@@ -1573,6 +1722,38 @@ const JobCardPage = () => {
                                     </div>
                                   </div>
                                 </div>
+                                <div className="w-full space-y-4">
+                                  <div className="w-full lg:w-full">
+                                    <div>
+                                      <Label htmlFor="nameOnRegistrationCard">
+                                        Registration Card Name
+                                      </Label>
+                                      <div className="flex gap-2 w-full">
+                                        <Input
+                                          type="text"
+                                          placeholder="Registration Card Name"
+                                          size="lg"
+                                          id="nameOnRegistrationCard"
+                                          {...register(
+                                            "carDetails.nameOnRegistrationCard"
+                                          )}
+                                          className={cn("w-full", {
+                                            "border-red-500":
+                                              errors.carDetails?.nameOnRegistrationCard,
+                                          })}
+                                        />
+                                      </div>
+                                      {errors.carDetails?.nameOnRegistrationCard && (
+                                        <div className="text-red-500 mt-2">
+                                          {
+                                            errors.carDetails.nameOnRegistrationCard
+                                              .message
+                                          }
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                             </CardContent>
                           </Card>
@@ -1610,6 +1791,7 @@ const JobCardPage = () => {
                                               setCurrentInsId(
                                                 selectedOption?.id
                                               );
+                                              handleInsuranceCheck(selectedOption?.id);
                                             }}
                                             // onChange={(selectedOption) => {
                                             //   onChange({ companyName: selectedOption.value, companyId: selectedOption.id });
@@ -1638,13 +1820,13 @@ const JobCardPage = () => {
                                     </div>
                                     {errors?.insuranceDetails
                                       ?.currentInsurance && (
-                                      <div className="text-destructive mt-2">
-                                        {
-                                          errors?.insuranceDetails
-                                            ?.currentInsurance.message
-                                        }
-                                      </div>
-                                    )}
+                                        <div className="text-destructive mt-2">
+                                          {
+                                            errors?.insuranceDetails
+                                              ?.currentInsurance.message
+                                          }
+                                        </div>
+                                      )}
                                   </div>
                                 </div>
                                 {/* <div className="w-full space-y-4">
@@ -1702,13 +1884,13 @@ const JobCardPage = () => {
                                     </div>
                                     {errors?.insuranceDetails
                                       ?.insuranceExpiryDate && (
-                                      <div className="text-destructive mt-2">
-                                        {
-                                          errors?.insuranceDetails
-                                            ?.insuranceExpiryDate.message
-                                        }
-                                      </div>
-                                    )}
+                                        <div className="text-destructive mt-2">
+                                          {
+                                            errors?.insuranceDetails
+                                              ?.insuranceExpiryDate.message
+                                          }
+                                        </div>
+                                      )}
                                   </div>
                                 </div>
                               </div>
@@ -1731,7 +1913,7 @@ const JobCardPage = () => {
                                 <div className="w-full space-y-4">
                                   <div className="w-full lg:w-full">
                                     <div>
-                                      <Label htmlFor="details">Notes</Label>
+                                      <Label htmlFor="details">Comments</Label>
                                       <div className="flex gap-2 w-full">
                                         <Textarea
                                           placeholder="Notes..."
@@ -1809,7 +1991,6 @@ const JobCardPage = () => {
                                 />
                               </div> */}
                               </div>
-                              {/* assigned to come here */}
                             </CardContent>
                           </Card>
                         </div>
@@ -1966,6 +2147,58 @@ const JobCardPage = () => {
                                           </div>
                                         </div>
                                       </div>
+
+                                      {!watch("isFault") && ( // Conditionally render the "Current Insurer" section
+                                        <div className="w-full space-y-4 mt-4">
+                                          <div>
+                                            <Label htmlFor="newInsuranceCompany">
+                                              New Insurer
+                                            </Label>
+                                            <div className="flex gap-2 w-full">
+                                              <Controller
+                                                name="newInsuranceCompany"
+                                                control={control}
+                                                render={({
+                                                  field: { onChange, value },
+                                                }) => (
+                                                  <Select
+                                                    className="react-select w-full"
+                                                    classNamePrefix="select"
+                                                    id="newInsuranceCompany"
+                                                    styles={styles}
+                                                    options={
+                                                      InsuranseCompanyList2
+                                                    }
+                                                    onChange={(
+                                                      selectedOption
+                                                    ) => {
+                                                      onChange(
+                                                        selectedOption?.id
+                                                      );
+                                                      setNewInsId(
+                                                        selectedOption?.id
+                                                      );
+                                                      handleInsuranceCheck(selectedOption?.id);
+                                                    }}
+                                                    value={InsuranseCompanyList2?.find(
+                                                      (option) =>
+                                                        option?.value === value
+                                                    )}
+                                                  />
+                                                )}
+                                              />
+                                            </div>
+                                            {errors?.newInsuranceCompany && (
+                                              <div className="text-destructive mt-2">
+                                                {
+                                                  errors?.newInsuranceCompany
+                                                    ?.message
+                                                }
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 </div>
@@ -1978,7 +2211,7 @@ const JobCardPage = () => {
                         <div className="w-full lg:w-full space-y-4">
                           <Card className="border">
                             <CardHeader className="flex flex-row items-center gap-3 font-bold">
-                              Photo Upload
+                              Upload Photos of The Vehicle Before The Repair
                             </CardHeader>
                             <CardContent className="flex flex-wrap gap-4 justify-between w-full">
                               <div className="flex flex-col flex-wrap gap-4 w-full lg:w-[45%] justify-between">

@@ -56,10 +56,10 @@ const employeeSchema = z
     password: z
       .string()
       .min(8, { message: "Password should contain atleast 8 characters." }),
-      // .regex(strongPasswordRegex, {
-      //   message:
-      //     "Password must be strong. At least 8 characters long, including one uppercase letter, one lowercase letter, one number, and one special character.",
-      // }),
+    // .regex(strongPasswordRegex, {
+    //   message:
+    //     "Password must be strong. At least 8 characters long, including one uppercase letter, one lowercase letter, one number, and one special character.",
+    // }),
     confirmPassword: z
       .string()
       .min(1, { message: "Confirm password is required." }),
@@ -109,7 +109,7 @@ const EmployeePage = () => {
 
   const handlePasswordModalOpen = () => setIsPasswordModalOpen(true);
   const handlePasswordModalClose = () => setIsPasswordModalOpen(false);
-
+  const [showPassword, setShowPassword] = useState(false);
   const [isPasswordUpdate, setIsPasswordUpdate] = useState(false);
 
   const employeeId = create_employee && create_employee[0];
@@ -143,8 +143,7 @@ const EmployeePage = () => {
   });
 
   const [permission, setPermission] = useState({
-    jobCard: { create: false, view: false, update: false, delete: false },
-    // insuranceCompany: { create: false, view: false, update: false, delete: false },
+    jobCard: { create: false, view: false, update: false, delete: false, reAssign: false },
     cars: { create: false, view: false, update: false, delete: false },
     customers: { create: false, view: false, update: false, delete: false },
   });
@@ -253,7 +252,7 @@ const EmployeePage = () => {
       return await updateEmployee(employeeId, formData);
     },
     onSuccess: (response) => {
-      console.log(response,"responseresponse");
+      console.log(response, "responseresponse");
       toast.success(response?.message || "Employee updated successfully");
       if (isPasswordUpdate) {
         handlePasswordModalClose();
@@ -298,6 +297,7 @@ const EmployeePage = () => {
         view: !allSelected,
         update: !allSelected,
         delete: !allSelected,
+        reAssign: !allSelected,
       };
       return acc;
     }, {});
@@ -330,7 +330,7 @@ const EmployeePage = () => {
     const { value } = event.target;
     setValue(fieldName, toTitleCase(value));
   };
- 
+
   const handlePasswordUpdate = (data) => {
     setIsPasswordUpdate(true);
     // Call your update mutation here
@@ -503,8 +503,34 @@ const EmployeePage = () => {
                     {!employeeId && (
                       <div className="w-full lg:w-[48%] space-y-2">
                         <Label htmlFor="password">Create Password</Label>
-                        <Input
-                          type="text"
+
+
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Create Password"
+                            {...register("password")}
+                            id="password"
+                            size="lg"
+                            onChange={(e) => handleInputChange(e, "password")}
+                            className={cn("w-full pr-10", {
+                              "border-destructive": errors.password,
+                            })}
+                          />
+                          <span
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            <Icon
+                              icon={showPassword ? "mdi:eye-off" : "mdi:eye"}
+                              className="w-5 h-5 text-gray-500"
+                            />
+                          </span>
+                        </div>
+
+
+                        {/* <Input
+                          
                           placeholder="Create Password"
                           {...register("password")}
                           size="lg"
@@ -513,7 +539,7 @@ const EmployeePage = () => {
                           className={cn("w-full", {
                             "border-destructive": errors.password,
                           })}
-                        />
+                        /> */}
                         {errors.password && (
                           <div className="text-destructive mt-2">
                             {errors?.password?.message}
@@ -527,7 +553,7 @@ const EmployeePage = () => {
                         <Label htmlFor="confirmPassword">
                           Confirm Password
                         </Label>
-                        <Input
+                        {/* <Input
                           type="text"
                           placeholder="Confirm Password"
                           {...register("confirmPassword")}
@@ -539,7 +565,31 @@ const EmployeePage = () => {
                           className={cn("w-full", {
                             "border-destructive": errors.confirmPassword,
                           })}
-                        />
+                        /> */}
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Confirm Password"
+                            {...register("confirmPassword")}
+                            id="confirmPassword"
+                            size="lg"
+                            onChange={(e) =>
+                              handleInputChange(e, "confirmPassword")
+                            }
+                            className={cn("w-full", {
+                              "border-destructive": errors.confirmPassword,
+                            })}
+                          />
+                          <span
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            <Icon
+                              icon={showPassword ? "mdi:eye-off" : "mdi:eye"}
+                              className="w-5 h-5 text-gray-500"
+                            />
+                          </span>
+                        </div>
                         {errors.confirmPassword && (
                           <div className="text-destructive mt-2">
                             {errors?.confirmPassword?.message}
@@ -614,9 +664,7 @@ const EmployeePage = () => {
                               </div>
                               <div className="flex flex-col gap-4 p-6">
                                 <div className="flex flex-wrap gap-4 ">
-                                  <Label className="capitalize font-semibold">
-                                    Select All
-                                  </Label>
+                                  <Label className="capitalize font-semibold">Select All</Label>
                                   <Switch
                                     checked={allSelected}
                                     onCheckedChange={handleSelectAllChange}
@@ -635,29 +683,18 @@ const EmployeePage = () => {
                                   ) {
                                     return null;
                                   }
+
                                   return (
-                                    <div
-                                      key={category}
-                                      className="flex flex-wrap gap-4"
-                                    >
+                                    <div key={category} className="flex flex-wrap gap-4">
                                       <div className="w-full lg:w-1/4 space-y-2">
                                         <Label className="capitalize font-semibold">
                                           {category}
                                         </Label>
                                       </div>
-                                      {[
-                                        "create",
-                                        "view",
-                                        "update",
-                                        "delete",
-                                      ].map((type) => (
-                                        <div
-                                          key={type}
-                                          className="flex items-center gap-2"
-                                        >
-                                          <Label className="capitalize">
-                                            {type}
-                                          </Label>
+
+                                      {["create", "view", "update", "delete"].map((type) => (
+                                        <div key={type} className="flex items-center gap-2">
+                                          <Label className="capitalize">{type}</Label>
                                           <Switch
                                             checked={permission[category][type]}
                                             onCheckedChange={() =>
@@ -666,6 +703,17 @@ const EmployeePage = () => {
                                           />
                                         </div>
                                       ))}
+
+                                      {/* Conditionally render the reAssign toggle for jobCard if designation is CSR */}
+                                      {category === "jobCard" && designation?.value === "CSR" && (
+                                        <div className="flex items-center gap-2">
+                                          <Label className="capitalize">Reassign</Label>
+                                          <Switch
+                                            checked={permission[category].reAssign}
+                                            onCheckedChange={() => handleSwitchChange(category, 'reAssign')}
+                                          />
+                                        </div>
+                                      )}
                                     </div>
                                   );
                                 })}
@@ -674,6 +722,7 @@ const EmployeePage = () => {
                           </div>
                         </div>
                       </div>
+
                     </div>
                   </div>
                 </CardContent>

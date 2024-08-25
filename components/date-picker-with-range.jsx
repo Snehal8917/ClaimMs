@@ -18,6 +18,7 @@ export default function DatePickerWithRange({
   className,
   onSelectDateRange,
   selectedDateRange,
+  message
 }) {
   // const [date, setDate] = React.useState(null);
   const [dateRange, setDateRange] = useState(
@@ -34,8 +35,8 @@ export default function DatePickerWithRange({
       onSelectDateRange(dates);
     }
   };
-  // console.log(dateRange?.from, "dateRange");
-  // console.log(dateRange?.to, "dateRange");
+  console.log(dateRange?.from, "dateRange");
+  console.log(dateRange?.to, "dateRange");
 
   return (
     <div className={cn("grid gap-2", className)}>
@@ -49,7 +50,8 @@ export default function DatePickerWithRange({
                 "yyyy/MM/dd"
               )}`
             ) : (
-              <span>Pick a date range</span>
+              // <span>Pick a date range</span>
+              <span>{message}</span>
             )}
           </Button>
         </PopoverTrigger>

@@ -158,7 +158,7 @@ const ProjectPageView = ({ trans }) => {
         <div className="text-2xl font-medium text-default-800">
           Dashboard {title}
         </div>
-        <div className="flex justify-center items-center gap-4">
+        <div className="flex justify-center items-center gap-4 flex-wrap">
           <Button
             asChild
             className={`${canCreateJobCard ? "" : "disable cursor-not-allowed"}`}

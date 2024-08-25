@@ -70,6 +70,7 @@ const CompanyPage = () => {
   const router = useRouter();
   const [resetTrigger, setResetTrigger] = useState(false);
   const { admin_add_company } = useParams();
+  const [showPassword, setShowPassword] = useState(false);
 
   const adminCompanyId = admin_add_company && admin_add_company[0];
   const {
@@ -375,7 +376,7 @@ const CompanyPage = () => {
                   <div className="flex w-full justify-between flex-wrap gap-2">
                     <div className="w-full lg:w-[48%] space-y-2">
                       <Label htmlFor="password">Create Password</Label>
-                      <Input
+                      {/* <Input
                         type="text"
                         placeholder="Create Password"
                         {...register("password")}
@@ -384,16 +385,40 @@ const CompanyPage = () => {
                         className={cn("w-full", {
                           "border-destructive": errors.password,
                         })}
-                      />
+                      /> */}
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Create Password"
+                          {...register("password")}
+                          id="password"
+                          size="lg"
+                          // onChange={(e) => handleInputChange(e, "password")}
+                          className={cn("w-full", {
+                            "border-destructive": errors.password,
+                          })}
+                        />
+                        <span
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          <Icon
+                            icon={showPassword ? "mdi:eye-off" : "mdi:eye"}
+                            className="w-5 h-5 text-gray-500"
+                          />
+                        </span>
+                      </div>
                       {errors.password && (
                         <div className="text-destructive mt-2">
                           {errors?.password?.message}
                         </div>
                       )}
                     </div>
+
+
                     <div className="w-full lg:w-[48%]  space-y-2">
                       <Label htmlFor="confirmPassword">Confirm Password</Label>
-                      <Input
+                      {/* <Input
                         type="text"
                         placeholder="Confirm Password"
                         {...register("confirmPassword")}
@@ -402,13 +427,39 @@ const CompanyPage = () => {
                         className={cn("w-full", {
                           "border-destructive": errors.confirmPassword,
                         })}
-                      />
+                      /> */}
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Confirm Password"
+                          {...register("confirmPassword")}
+                          id="confirmPassword"
+                          size="lg"
+                          // onChange={(e) =>
+                          //   handleInputChange(e, "confirmPassword")
+                          // }
+                          className={cn("w-full", {
+                            "border-destructive": errors.confirmPassword,
+                          })}
+                        />
+                        <span
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          <Icon
+                            icon={showPassword ? "mdi:eye-off" : "mdi:eye"}
+                            className="w-5 h-5 text-gray-500"
+                          />
+                        </span>
+                      </div>
                       {errors.confirmPassword && (
                         <div className="text-destructive mt-2">
                           {errors?.confirmPassword?.message}
                         </div>
                       )}
                     </div>
+
+
                   </div>
                 )}
 

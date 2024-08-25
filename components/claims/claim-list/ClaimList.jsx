@@ -41,6 +41,7 @@ import {
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import { getUserMeAction } from "@/action/auth-action";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const statusOptions = ["Under Approval", "Approved", "Re-Submitted", "Reject"];
 
@@ -50,6 +51,7 @@ const ClaimList = () => {
   const [selectJobCard, setselectJobCard] = useState(null);
   const [selectedClaimId, setSelectedClaimId] = useState(null);
   const [insuranceClaimNumber, setInsuranceClaimNumber] = useState("");
+  const [noClaimNumber, setNoClaimNumber] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const router = useRouter();
@@ -91,9 +93,9 @@ const ClaimList = () => {
   const USER_ROLE = userData?.data?.userId?.designation;
   const updateClaimMutation = useMutation({
     mutationKey: ["updateClaimMutation"],
-    mutationFn: async ({ id, status, insuranceClaimNumber }) => {
+    mutationFn: async ({ id, status, insuranceClaimNumber, noClaimNumber }) => {
       try {
-        return await updateClaimAction(id, { status, insuranceClaimNumber }); // Assuming updateClaimStatus is your API call function
+        return await updateClaimAction(id, { status, insuranceClaimNumber, noClaimNumber }); // Pass checkbox value in payload
       } catch (error) {
         throw new Error(
           error.response?.data?.message || "Failed to update claim status"
@@ -104,7 +106,7 @@ const ClaimList = () => {
       toast.success("Claim status updated successfully");
       const status = response?.data?.status;
       const jobCardId = response?.data?.jobCardId;
-      if (status === "Approved"  && USER_ROLE === "company") {
+      if (status === "Approved" && USER_ROLE === "company") {
         handleAddQuotation(jobCardId);
       }
       refetch();
@@ -129,14 +131,16 @@ const ClaimList = () => {
   };
 
   const handleModalSubmit = () => {
-    if (insuranceClaimNumber) {
+    if (noClaimNumber || insuranceClaimNumber) { // Check if checkbox is selected or claim number is provided
       updateClaimMutation.mutate({
         id: selectedClaimId,
         status: "Approved",
-        insuranceClaimNumber,
+        insuranceClaimNumber: noClaimNumber ? null : insuranceClaimNumber, // If noClaimNumber is true, pass null
+        noClaimNumber,
       });
       setModalOpen(false);
       setInsuranceClaimNumber("");
+      setNoClaimNumber(false);
     } else {
       toast.error("Insurance Claim Number is required");
     }
@@ -392,7 +396,17 @@ const ClaimList = () => {
               type="text"
               value={insuranceClaimNumber}
               onChange={(e) => setInsuranceClaimNumber(e.target.value)}
+              disabled={noClaimNumber} // Disable input if checkbox is checked
             />
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="noClaimNumber"
+                 variant="filled"
+                checked={noClaimNumber}
+                onCheckedChange={(checked) => setNoClaimNumber(checked)}
+              />
+              <Label htmlFor="noClaimNumber">No Claim Number</Label>
+            </div>
           </div>
           <DialogFooter>
             <Button onClick={() => setModalOpen(false)}>Cancel</Button>

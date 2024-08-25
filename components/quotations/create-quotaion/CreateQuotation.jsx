@@ -8,6 +8,7 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Icon } from "@iconify/react";
@@ -48,6 +49,9 @@ import { data } from "autoprefixer";
 import SectionAddItem from "./SectionAddItem";
 import { quotationFormSchemaSection } from "../schema/quotaionFormSchema";
 import { updateSpQuotationeById } from "@/config/quotationConfig/quotation.config";
+import { Checkbox } from "@/components/ui/checkbox";
+
+
 const styles = {
   option: (provided, state) => ({
     ...provided,
@@ -58,6 +62,7 @@ const styles = {
 const CreateQuotation = () => {
   const [resetTrigger, setResetTrigger] = useState(false);
   const params = useParams();
+  const [subtotal, setSubtotal] = useState(0);
   const { data: session } = useSession();
   const quotaionsId = params?.quotaionsId;
   const viewQuotationId = params?.viewQuotationId;
@@ -68,7 +73,7 @@ const CreateQuotation = () => {
   const [isFocused, setIsFocused] = useState(false);
   const jobCardI1d = params?.jobcardId;
   const [initialStatus, setInitialStatus] = useState(null);
-  const [isSectionView, setIsSectionView] = useState(false);
+  const [isSectionView, setIsSectionView] = useState(true);
   //
   const { data: getCSREmployeeData } = useQuery({
     queryKey: ["getCSREmployeeAction"],
@@ -129,7 +134,37 @@ const CreateQuotation = () => {
   });
   const quStatus = watch("quStatus");
 
-  console.log("all filres :-", watch());
+
+  const yyy = watch();
+
+  const totalLaborParts = watch("totalLaborParts");
+  const totalSectionParts = watch("totalSectionParts");
+
+  useEffect(() => {
+    let total = 0;
+    const parseValue = (value) => {
+      const parsed = parseFloat(value);
+      return isNaN(parsed) ? 0 : parsed;
+    };
+
+    const qty = parseValue(watch(`totalLaborParts`));
+    const price = parseValue(watch(`totalSectionParts`));
+
+    total = Math.floor(qty + price);
+    if (totalLaborParts || totalSectionParts) {
+      const laborParts = parseValue(totalLaborParts);
+      const sectionParts = parseValue(totalSectionParts);
+
+      const total = laborParts + sectionParts;
+
+      // Set the grand total only if both values are provided
+      setValue("totalGrandParts", total.toFixed(2));
+    }
+
+    // setSubtotal(total);
+    // setValue("totalGrandParts", total.toFixed(2));
+  }, [totalLaborParts, totalSectionParts, setValue]);
+
 
   useEffect(() => {
     reset(initialValues);
@@ -287,7 +322,6 @@ const CreateQuotation = () => {
   }));
 
 
-  console.log("JobList :---", JobData?.data);
 
   const jobCardId = params?.jobcardId;
   ///
@@ -448,13 +482,15 @@ const CreateQuotation = () => {
     { label: "Submitted", value: "Submitted" },
   ];
   const CsrStatusList = [
-    { label: "Approved", value: "Approved" },
-    { label: "Declined", value: "Declined" },
+    // { label: "Approved", value: "Approved" },
+    // { label: "Declined", value: "Declined" },
     // { label: "Submitted", value: "Submitted" },
   ];
   const SurveyorStatusList = [
-    { label: "Draft", value: "Draft" },
+    // { label: "Draft", value: "Draft" },
     { label: "Submitted", value: "Submitted" },
+    { label: "Approved", value: "Approved" },
+    { label: "Declined", value: "Declined" },
   ];
   const getStatusList = () => {
     if (role === "company") {
@@ -471,8 +507,9 @@ const CreateQuotation = () => {
   const isSelectEnabled =
     role === "company" ||
     (role === "employee" &&
-      ((designation === "Surveyor" && initialStatus === "Draft") ||
-        (designation === "CSR" && initialStatus === "Submitted")));
+      ((designation === "Surveyor"
+        //  && initialStatus === "Submitted" && initialStatus === "Draft" 
+      )));
   const isStatusEditable = [
     "Draft",
     "Submitted"
@@ -615,8 +652,9 @@ const CreateQuotation = () => {
                 <CardContent className="space-y-6">
                   <div className="w-full flex flex-wrap gap-4">
                     <div className="w-full flex justify-between gap-4">
+
                       <div className="w-full">
-                        <Label htmlFor="quDateAndTime">Date and time</Label>
+                        <Label htmlFor="quDateAndTime">Date</Label>
                         <div className="flex flex-col gap-2 w-full">
                           <Controller
                             control={control}
@@ -646,25 +684,20 @@ const CreateQuotation = () => {
                         </div>
                       </div>
                       <div className="w-full">
-                        <Label htmlFor="quCustomer">Customer</Label>
+                        <Label htmlFor="carPlateNumber">Car Plate Number</Label>
                         <div className="flex gap-2 w-full">
                           <Controller
-                            name="quCustomer"
                             control={control}
-                            render={({ field: { onChange, value } }) => (
-                              <Select
-                                className="react-select w-full"
-                                classNamePrefix="select"
-                                id="quCustomer"
-                                styles={styles}
-                                options={CustomerList}
-                                onChange={(selectedOption) => {
-                                  onChange(selectedOption.value);
-                                }}
-                                value={CustomerList?.find(
-                                  (option) => option.value === value
-                                )}
-                                isDisabled
+                            name="carPlateNumber"
+                            defaultValue=""
+                            render={({ field }) => (
+                              <Input
+                                type="text"
+                                placeholder="car plate number"
+                                size="lg"
+                                id="carPlateNumber"
+                                {...field}
+                                readOnly
                               />
                             )}
                           />
@@ -675,38 +708,11 @@ const CreateQuotation = () => {
                           </div>
                         )} */}
                       </div>
+
+
+
                     </div>
                     <div className="w-full flex justify-between gap-4">
-                      <div className="w-full">
-                        <Label htmlFor="quCar">Car</Label>
-                        <div className="flex gap-2 w-full">
-                          <Controller
-                            name="quCar"
-                            control={control}
-                            render={({ field: { onChange, value } }) => (
-                              <Select
-                                className="react-select w-full"
-                                classNamePrefix="select"
-                                id="quCar"
-                                styles={styles}
-                                options={CarList}
-                                onChange={(selectedOption) => {
-                                  onChange(selectedOption.value);
-                                }}
-                                value={CarList?.find(
-                                  (option) => option.value === value
-                                )}
-                                isDisabled
-                              />
-                            )}
-                          />
-                        </div>
-                        {/* {errors.quCar && (
-                          <div className="text-red-500 mt-2">
-                            {errors.quCar.message}
-                          </div>
-                        )} */}
-                      </div>
                       <div className="w-full">
                         <Label htmlFor="quInsuranceCom">
                           Insurance Company
@@ -739,6 +745,40 @@ const CreateQuotation = () => {
                           </div>
                         )} */}
                       </div>
+
+                      <div className="w-full">
+                        <Label htmlFor="quCar">Car</Label>
+                        <div className="flex gap-2 w-full">
+                          <Controller
+                            name="quCar"
+                            control={control}
+                            render={({ field: { onChange, value } }) => (
+                              <Select
+                                className="react-select w-full"
+                                classNamePrefix="select"
+                                id="quCar"
+                                styles={styles}
+                                options={CarList}
+                                onChange={(selectedOption) => {
+                                  onChange(selectedOption.value);
+                                }}
+                                value={CarList?.find(
+                                  (option) => option.value === value
+                                )}
+                                isDisabled
+                              />
+                            )}
+                          />
+                        </div>
+                        {/* {errors.quCar && (
+                          <div className="text-red-500 mt-2">
+                            {errors.quCar.message}
+                          </div>
+                        )} */}
+                      </div>
+
+
+
                     </div>
                     <div className="w-full flex justify-between gap-4">
                       <div className="w-full">
@@ -774,11 +814,11 @@ const CreateQuotation = () => {
                             )}
                           />
                         </div>
-                        {/* {errors.quCustomerCareRepresentative && (
+                        {errors.quCustomerCareRepresentative && (
                           <div className="text-red-500 mt-2">
                             {errors.quCustomerCareRepresentative.message}
                           </div>
-                        )} */}
+                        )}
                       </div>
                       <div className="w-full">
                         <Label htmlFor="qudaystocomplete">
@@ -941,6 +981,123 @@ const CreateQuotation = () => {
                           </div>
                         </div>
                       </div>
+                    )}
+
+
+                    {isSectionView && (
+                      <div className="flex flex-col gap-4">
+                        <div className="w-full flex items-center">
+                          <Label htmlFor="totalSectionParts" className="w-1/2">
+                            Parts Total :
+                          </Label>
+                          <div className="flex flex-col gap-2 w-full">
+                            <Controller
+                              control={control}
+                              name="totalSectionParts"
+                              defaultValue=""
+                              render={({ field }) => (
+                                <Input
+                                  type="text"
+                                  placeholder="Total Parts"
+                                  size="lg"
+                                  id="totalSectionParts"
+                                  {...field}
+                                  readOnly={
+                                    (quotaionsId && quotationData?.status === 'Draft') ? false :
+                                      (quotaionsId && quotationData?.status !== 'Draft') ? true :
+                                        (viewQuotationId) ? true :
+                                          false
+                                  }
+                                />
+                              )}
+                            />
+                            {errors.totalSectionParts && (
+                              <span className="text-red-700">
+                                {errors.totalSectionParts.message}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="w-full flex items-center">
+                          <Label htmlFor="totalSectionParts" className="w-1/2">
+                            Labor  Total :
+                          </Label>
+                          <div className="flex flex-col gap-2 w-full">
+                            <Controller
+                              control={control}
+                              name="totalLaborParts"
+                              defaultValue=""
+                              render={({ field }) => (
+                                <Input
+                                  type="text"
+                                  placeholder="Total Labor"
+                                  size="lg"
+                                  id="totalLaborParts"
+                                  {...field}
+                                  readOnly={
+                                    (quotaionsId && quotationData?.status === 'Draft') ? false :
+                                      (quotaionsId && quotationData?.status !== 'Draft') ? true :
+                                        (viewQuotationId) ? true :
+                                          false
+                                  }
+                                />
+                              )}
+                            />
+                            {errors.totalLaborParts && (
+                              <span className="text-red-700">
+                                {errors.totalLaborParts.message}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="w-full flex items-center">
+                          <Label htmlFor="totalGrandParts" className="w-1/2">
+                            Ground Total :
+                          </Label>
+                          <div className="flex flex-col gap-2 w-full">
+
+                            <Controller
+                              control={control}
+                              name="totalGrandParts"
+                              defaultValue=""
+                              render={({ field }) => (
+                                <Input
+                                  type="text"
+                                  placeholder="Grand Total"
+                                  size="lg"
+                                  id="totalGrandParts"
+                                  {...field}
+                                  readOnly={
+                                    (quotaionsId && quotationData?.status === 'Draft') ? false :
+                                      (quotaionsId && quotationData?.status !== 'Draft') ? true :
+                                        (viewQuotationId) ? true :
+                                          false
+                                  }
+                                />
+                              )}
+                            />
+                            {errors.totalGrandParts && (
+                              <span className="text-red-700">
+                                {errors.totalGrandParts.message}
+                              </span>
+                            )}
+
+                            {/* <Input
+                              type="text"
+                              value={subtotal.toFixed(2)}
+                              placeholder="Grand Total"
+                              size="lg"
+                              id="totalGrandParts"
+                              readOnly
+                              className="cursor-not-allowed"
+                            /> */}
+
+
+
+                          </div>
+                        </div>
+                      </div>
+
                     )}
 
                     {!isSectionView && (
@@ -1140,31 +1297,152 @@ const CreateQuotation = () => {
                         {quotationData?.status === "Approved" ? (
                           <></>
                         ) : (
-                          <div className="flex w-full flex-col">
-                            <div className="w-1/2">
-                              <Label>Add LPO</Label>
-                              <Controller
-                                name="quoLpo"
-                                control={control}
-                                render={({ field: { value, onChange } }) => (
-                                  <FileUploaderSingle
-                                    value={value}
-                                    onChange={onChange}
-                                    height={150}
-                                    width={150}
-                                    name="quoLpo"
-                                    errors={errors}
-                                    resetTrigger={resetTrigger}
-                                    readOnly={"ture"}
-                                    pdf={true}
-                                  />
-                                )}
-                              />
+                          <>
+                            <div className="flex w-full flex-col">
+                              <div className="w-1/2">
+                                <Label>Add LPO</Label>
+                                <Controller
+                                  name="quoLpo"
+                                  control={control}
+                                  render={({ field: { value, onChange } }) => (
+                                    <FileUploaderSingle
+                                      value={value}
+                                      onChange={onChange}
+                                      height={150}
+                                      width={150}
+                                      name="quoLpo"
+                                      errors={errors}
+                                      resetTrigger={resetTrigger}
+                                      readOnly={"ture"}
+                                      pdf={true}
+                                    />
+                                  )}
+                                />
+                              </div>
                             </div>
-                          </div>
+                            <div className="w-full">
+                              <Label htmlFor="qudaystocomplete">
+                                Days to complete
+                              </Label>
+                              <div className="flex flex-col gap-2 w-1/2">
+                                <Controller
+                                  control={control}
+                                  name="qudaystocomplete"
+                                  defaultValue=""
+                                  render={({ field }) => (
+                                    <Input
+                                      type="text"
+                                      placeholder="days to complete"
+                                      size="lg"
+                                      id="qudaystocomplete"
+                                      {...field}
+                                    // readOnly={
+                                    //   (quotaionsId && quotationData?.status === 'Draft') ? false :
+                                    //     (quotaionsId && quotationData?.status !== 'Draft') ? true :
+                                    //       (viewQuotationId) ? true :
+                                    //         false
+                                    // }
+                                    />
+                                  )}
+                                />
+                                {errors.qudaystocomplete && (
+                                  <span className="text-red-700">
+                                    {errors.qudaystocomplete.message}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </>
                         )}
                       </>
                     )}
+                  </div>
+                  {/* <div className="flex items-center h-5 mt-4">
+
+                    <Controller
+                      name="noClaimNumber"
+                      control={control}
+                      render={({ field }) => (
+
+                        <Checkbox
+                          id="isMailSent"
+                          {...field}
+                          checked={field.value}
+                         // onCheckedChange={(checked) => field.onChange(checked)}
+                          disabled={
+                            (quotaionsId && quotationData?.status === 'Draft') ? false :
+                              (quotaionsId && quotationData?.status !== 'Draft') ? true :
+                                (viewQuotationId) ? true :
+                                  false
+                          }
+                        />
+
+                      )}
+                    />
+                    <label htmlFor="isMailSent" className="ml-2">
+                      Do you want to send an email to the insurance company?
+                    </label>
+                  </div> */}
+
+                  <div className="flex items-center h-5 mt-4">
+                    <Controller
+                      name="isMailSent"
+                      control={control}
+                      render={({ field }) => (
+                        <input
+                          id="isMailSent"
+                          type="checkbox"
+                          className="border-gray-200 h-6 w-6 disabled:checked:bg-[#30D5C7] accent-[#30D5C7] checked:bg-[#30D5C7] rounded-sm text-white mr-2"
+                          {...field}
+                          checked={field.value}
+
+                          disabled={
+                            (quotaionsId && quotationData?.status === 'Draft') ? false :
+                              (quotaionsId && quotationData?.status !== 'Draft') ? true :
+                                (viewQuotationId) ? true :
+                                  false
+                          }
+                        />
+                      )}
+                    />
+                    <label htmlFor="isMailSent">
+                      Do you want to send an email to the insurance company?
+                    </label>
+                  </div>
+                  <div>
+                    <Label
+                      htmlFor="quoNotes"
+                      className="text-sm font-medium text-default-600 mb-1"
+                    >
+                      Note:
+                    </Label>
+
+                    <div className="flex flex-col gap-2 w-full">
+                      <Controller
+                        control={control}
+                        name="quoNotes"
+                        render={({ field }) => (
+                          <Textarea
+                            type="text"
+                            id="quoNotes"
+                            className="rounded h-10"
+                            placeholder="type note..."
+                            {...field}
+                            readOnly={
+                              (quotaionsId && quotationData?.status === 'Draft') ? false :
+                                (quotaionsId && quotationData?.status !== 'Draft') ? true :
+                                  (viewQuotationId) ? true :
+                                    false
+                            }
+                          />
+                        )}
+                      />
+                      {errors?.quoNotes && (
+                        <span className="text-red-700">
+                          {errors?.quoNotes.message}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
 
